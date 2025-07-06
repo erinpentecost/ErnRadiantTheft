@@ -178,7 +178,7 @@ local function newJob(player)
     macguffinInstance:moveInto(targetContainer)
 
     -- set the quest stage (this is done through mwscript in dialogue)
-    --types.Player.quests(player)[common.questID]:addJournalEntry(common.questStage.STARTED, player)
+    -- types.Player.quests(player)[common.questID]:addJournalEntry(common.questStage.STARTED, player)
 
     -- update current job
     if persistedState.players[player.id].current ~= nil then
@@ -207,17 +207,27 @@ local function onStolenCallback(data)
     if (currentJob == nil) or (currentJob.itemInstance.id ~= data.itemInstance) then
         return
     end
+    local quest = types.Player.quests(data.player)[common.questID]
+    if quest.stage ~= common.questStage.STARTED then
+        -- this can happen if the player places the quest item in an owned container
+        -- and pulls it back out again.
+        settings.debugPrint("quest state is bad for job " .. currentJob.jobID .. ": " .. tostring(quest.stage))
+        return
+    end
     -- we stole the right item.
     if data.caught then
-        settings.debugPrint("job "..currentJob.jobID.." entered stolen_good state")
+        settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_good state")
         types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_BAD, data.player)
     else
-        settings.debugPrint("job "..currentJob.jobID.." entered stolen_bad state")
+        settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_bad state")
         types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_GOOD, data.player)
     end
 end
 
 interfaces.ErnBurglary.onStolenCallback(onStolenCallback)
+
+-- TODO: watch for an event where the macguffin is lost
+-- TODO: watch for quest stage changed to start, then trigger newJob()
 
 return {
     eventHandlers = {},
