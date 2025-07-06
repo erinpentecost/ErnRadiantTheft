@@ -1,0 +1,15 @@
+Blackmail, Book, ernradianttheft_incriminatinglet
+Forgery, Clothing, ernradianttheft_signetring
+Trade Secrets, Book, ernradianttheft_ledger
+Dwemer, Armor, dwemer_helm
+Dwemer, Miscellaneous, misc_dwrv_bowl00
+Dwemer, Miscellaneous, misc_dwrv_goblet00
+Dwemer, Miscellaneous, misc_dwrv_pitcher00
+Dwemer, Miscellaneous, misc_dwrv_artifact00
+Dwemer, Miscellaneous, misc_dwrv_artifact50
+Dwemer, Miscellaneous, misc_dwrv_artifact60
+Skooma, Ingredient, ingred_moon_sugar_01
+Skooma, Potion, potion_skooma_01
+Necromancy, Book, bk_corpsepreperation1_c
+Necromancy, Book, bk_corpsepreperation2_c
+Necromancy, Book, bk_corpsepreperation3_c
