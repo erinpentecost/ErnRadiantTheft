@@ -1,0 +1,10 @@
+PLAYER:scripts/ErnRadiantTheft/player.lua
+GLOBAL:scripts/ErnRadiantTheft/interface.lua
+GLOBAL:scripts/ErnRadiantTheft/global.lua
+GLOBAL:scripts/ErnRadiantTheft/interface_test.lua
+
+GLOBAL:scripts/ErnRadiantTheft/alerts/global.lua
+PLAYER:scripts/ErnRadiantTheft/alerts/player.lua
+
+GLOBAL:scripts/ErnRadiantTheft/trespass/global.lua
+PLAYER:scripts/ErnRadiantTheft/trespass/player.lua

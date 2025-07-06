@@ -1,0 +1,11 @@
+name: "ErnRadiantTheft"
+description: "Procedurally-generated heists for the Thieves Guild."
+
+modSettingsTitle: "Mod Options"
+modSettingsDesc: "Change how the mod works."
+
+modSettingsGameplayTitle: "Gameplay Options"
+modSettingsGameplayDesc: "Change how gameplay mechanics work."
+
+debugMode_name: "Debug Mode"
+debugMode_description: "Print debug messages."
