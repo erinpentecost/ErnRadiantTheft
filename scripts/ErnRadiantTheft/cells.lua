@@ -45,6 +45,7 @@ local function loadAllowedCells()
             table.insert(allowedCells, cell)
         end
     end
+    settings.debugPrint("Loaded "..tostring(#allowedCells).." exterior cells into the allowlist.")
 end
 
 loadAllowedCells()

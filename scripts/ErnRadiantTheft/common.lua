@@ -26,3 +26,7 @@ local function shuffle(collection)
     end
     return randList
 end
+
+return {
+    shuffle = shuffle,
+}

@@ -15,6 +15,9 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]] local settings = require("scripts.ErnRadiantTheft.settings")
+local common = require("scripts.ErnRadiantTheft.common")
+local cells = require("scripts.ErnRadiantTheft.cells")
+local macguffins = require("scripts.ErnRadiantTheft.macguffins")
 local interfaces = require('openmw.interfaces')
 local world = require('openmw.world')
 local types = require("openmw.types")
@@ -43,14 +46,91 @@ local function loadState(saved)
     end
 end
 
+local function getDoors(cell)
+    local doors = {}
+    for _, door in ipairs(common.shuffle(cell:getAll(types.Door))) do
+        local destCell = types.Door.destCell(door)
+        if types.Door.isTeleport(door) and (destCell ~= nil) and (destCell.isExterior == false) and (destCell:hasTag("QuasiExterior") == false) then
+            table.insert(doors, door)
+        end
+    end
+    return doors
+end
+
+local function randomMacguffinForNPC(npcRecordId)
+    local previousJob = persistedState["previousJob"]
+    local record = types.NPC.record(npcRecordId)
+    if record == nil then
+        error("no record for npc: "..npcRecordId)
+    end
+
+    local macguffin = nil
+    for _, potenialMacguffin in ipairs(common.shuffle(macguffins.macguffins)) do
+        if (previousJob ~= nil) and (previousJob.category == potenialMacguffin.category) then
+            settings.debugPrint("Skipping repeated macguffin category "..previousJob.category)
+        elseif macguffins.filter(potenialMacguffin, record) then
+            return potenialMacguffin
+        end
+    end
+    settings.debugPrint("no suitable macguffins for npc: "..npcRecordId)
+    return nil
+end
+
+local function randomJob()
+    -- make sure we don't get duplicates back-to-back.
+    local previousJob = persistedState["previousJob"]
+
+    -- determine parent cell.
+    local parentCell = nil
+    for _, cell in ipairs(common.shuffle(cells.allowedCells)) do
+        if (previousJob ~= nil) and (previousJob.extCellID == cell.id) then
+            settings.debugPrint("Skipping repeated cell "..cell.id)
+        else
+            parentCell = cell
+            break
+        end
+    end
+    if parentCell == nil then
+        error("failed to find a parent cell")
+        return
+    end
+
+    -- now we have to load the cell so we can get all the doors.
+    -- pick a suitable interior cell.
+    -- there should be owned containers in it.
+    local targetContainer = nil
+    local macguffin = nil
+    local mark = nil
+    for _, door in ipairs(getDoors(parentCell)) do
+        for _, container in ipairs(common.shuffle(door.destCell:getAll(types.Container))) do
+            if (container.owner ~= nil) and (container.owner.recordId ~= nil) then
+                -- a container with an owner.
+                macguffin = randomMacguffinForNPC(container.owner.recordId)
+                if macguffin ~= nil then
+                    targetContainer = container
+                    mark = container.owner.recordId
+                    break
+                end
+            end
+        end
+    end
+    if macguffin == nil then
+        error("failed to find a macguffin")
+        return
+    end
+end
+
+
 local function newJob(data)
     if data == nil then
         error("data is nil")
     end
-    -- quest giver doesn't matter; we'll let any rank 8 thieves guild
+    -- quest giver doesn't matter; we'll let any rank 7 thieves guild
     -- member manage quests.
-    -- `mark` is the target NPC that owns the macguffin
-    -- `cell` is the cell that the item will spawn in.
+    -- `actorInstanceID` is the target NPC that owns the macguffin
+    -- `cellID` is the cell that the item will spawn in.
+    -- `extCellID` is the parent cell.
+    -- `category` is the category of the theft.
     -- `macguffinRecordID` is the item record id for the macguffin.
     -- `macguffinInstanceID` is the instance id for the macguffin, once it is spawned.
     -- 

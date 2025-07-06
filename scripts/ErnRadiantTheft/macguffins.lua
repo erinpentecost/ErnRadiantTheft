@@ -47,6 +47,47 @@ local function getRecord(itemtype, id)
     return nil
 end
 
+-- filter returns true if the npc can have the macguffin.
+local function filter(macguffin, npcRecord)
+    -- don't pick macguffins that will be sold by the mark.
+    local typeToService = {
+        Miscellaneous = "Misc",
+        Armor="Armor",
+        Potion="Potions",
+        Ingredient="Ingredients",
+        Book="Books",
+        Clothing="Clothing"
+    }
+    local service = typeToService[macguffin.type]
+    if service == nil then
+        service = macguffin.type
+    end
+    if npcRecord.servicesOffered[service] then
+        return false
+    end
+
+    -- don't pick respawning npcs.
+    if npcRecord.isRespawning then
+        return false
+    end
+
+    -- don't pick NPCs that are in the guild.
+    -- this is funky because we need to find or create the npc to figure that out.
+    local inThievesGuild = false
+    local inst = world.createObject(npcRecord, 1)
+    for _, factionId in pairs(types.NPC.getFactions(inst)) do
+        if factionId == "Thieves Guild" then
+            inThievesGuild = true
+        end
+    end
+    inst:remove()
+    if inThievesGuild then
+        return false
+    end
+
+    return true
+end
+
 local function loadMacguffins()
     -- read allow list.
     -- this can contain cells that don't exist.
@@ -82,11 +123,12 @@ local function loadMacguffins()
             end
         end
     end
-
+    settings.debugPrint("Loaded "..tostring(#macguffins).." macguffins into the allowlist.")
 end
 
 loadMacguffins()
 
 return {
     macguffins = macguffins,
+    filter = filter,
 }
