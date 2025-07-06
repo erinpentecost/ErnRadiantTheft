@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]] local settings = require("scripts.ErnRadiantTheft.settings")
 local aux_util = require('openmw_aux.util')
 local self = require("openmw.self")
+local common = require("scripts.ErnRadiantTheft.common")
 
 -- persistedState contains a copy of the job, at the time it was created.
 local persistedState = {}
@@ -46,7 +47,8 @@ local function onInit(initData)
 end
 
 return {
-    eventHandlers = {},
+    eventHandlers = {
+    },
     engineHandlers = {
         onInit = onInit,
         onSave = saveState,

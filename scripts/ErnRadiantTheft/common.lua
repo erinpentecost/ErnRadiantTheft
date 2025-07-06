@@ -14,9 +14,7 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
-]]
-
-local function shuffle(collection)
+]] local function shuffle(collection)
     local randList = {}
     for _, item in pairs(collection) do
         -- get random index to insert into. 1 to size+1.
@@ -27,6 +25,19 @@ local function shuffle(collection)
     return randList
 end
 
+local questStage = {
+    AVAILABLE = 5,
+    STARTED = 10,
+    STOLEN_GOOD = 20,
+    STOLEN_GOOD_LOST = 21,
+    STOLEN_BAD = 30,
+    STOLEN_BAD_LOST = 31,
+    EXPIRED = 40,
+    COMPLETED = 50
+}
+
 return {
     shuffle = shuffle,
+    questID = "ernradianttheft_quest",
+    questStage = questStage
 }

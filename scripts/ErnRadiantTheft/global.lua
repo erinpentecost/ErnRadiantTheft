@@ -19,6 +19,7 @@ local common = require("scripts.ErnRadiantTheft.common")
 local cells = require("scripts.ErnRadiantTheft.cells")
 local macguffins = require("scripts.ErnRadiantTheft.macguffins")
 local interfaces = require('openmw.interfaces')
+local async = require('openmw.async')
 local world = require('openmw.world')
 local types = require("openmw.types")
 local core = require("openmw.core")
@@ -41,7 +42,10 @@ end
 local function loadState(saved)
     if saved == nil then
         persistedState = {
-            currentJobID = 0
+            -- currentJobID is kept to maintain globally unique ids
+            currentJobID = 0,
+            -- players is a map of player-specific state to track.
+            players = {}
         }
     else
         persistedState = saved
@@ -79,9 +83,38 @@ local function randomMacguffinForNPC(npcRecordId)
     return nil
 end
 
-local function randomJob()
+local expireCallback = async:registerTimerCallback(settings.MOD_NAME .. "_expire_quest_callback", function(data)
+    if data.player == nil then
+        error("no player for quest expiration")
+        return
+    end
+    if data.jobID == nil then
+        error("no jobID for quest expiration")
+    end
+    local state = persistedState.players[data.player.id]
+    if (state ~= nil) and (state.current.jobID == data.jobID) then
+        -- only fail the quest if the item hasn't been stolen yet.
+        local quest = types.Player.quests(data.player)[common.questID]
+        if quest.stage == common.questStage.STARTED then
+            settings.debugPrint("quest expired")
+            -- fail the quest.
+            quest:addJournalEntry(common.questStage.EXPIRED, data.player)
+            -- delete the item
+            state.current.itemInstance:remove(1)
+        end
+    end
+end)
+
+local function newJob(player)
+    if player == nil then
+        error("player is nil")
+        return
+    elseif player.id == nil then
+        error("player.id is nil")
+        return
+    end
     -- make sure we don't get duplicates back-to-back.
-    local previousJob = persistedState["previousJob"]
+    local previousJob = persistedState.players[player.id].previous
 
     -- determine parent cell.
     local parentCell = nil
@@ -126,45 +159,41 @@ local function randomJob()
     end
 
     -- make the new job (with a unique id)
+    local macguffinInstance = world.createObject(macguffin.record.id, 1)
     persistedState.currentJobID = persistedState.currentJobID + 1
     local job = {
         jobID = persistedState.currentJobID,
+        playerID = player.id,
         ownerRecordId = mark,
         extCellID = parentCell.id,
         targetContainerId = targetContainer.id,
         category = macguffin.category,
         type = macguffin.type,
-        recordId = macguffin.recordId
+        recordId = macguffin.recordId,
+        itemInstance = macguffinInstance
     }
 
     -- place the macguffin
-    local macguffinInstance = world.createObject(macguffin.record.id, 1)
     macguffinInstance:addScript("scripts\\" .. settings.MOD_NAME .. "\\item.lua", job)
     macguffinInstance:moveInto(targetContainer)
-end
 
-local function newJob(data)
-    if data == nil then
-        error("data is nil")
+    -- set the quest stage (this is done through mwscript in dialogue)
+    --types.Player.quests(player)[common.questID]:addJournalEntry(common.questStage.STARTED, player)
+
+    -- update current job
+    if persistedState.players[player.id].current ~= nil then
+        persistedState.players[player.id].previous = persistedState.players[player.id].current
     end
-    -- quest giver doesn't matter; we'll let any rank 7 thieves guild
-    -- member manage quests.
-    -- `actorInstanceID` is the target NPC that owns the macguffin
-    -- `cellID` is the cell that the item will spawn in.
-    -- `extCellID` is the parent cell.
-    -- `category` is the category of the theft.
-    -- `macguffinRecordID` is the item record id for the macguffin.
-    -- `macguffinInstanceID` is the instance id for the macguffin, once it is spawned.
-    -- 
-end
+    persistedState.players[player.id].current = job
 
-local function onCellChange(data)
-    -- called when we enter a cell.
-    -- used to place the macguffin.
-    settings.debugPrint("entered " .. data.newCellID)
-end
+    -- set the expiration for 5 in-game days from now.
+    async:newSimulationTimer(60 * 60 * 24 * 5, expireCallback, {
+        player,
+        jobID = job.jobID
+    })
 
-interfaces.ErnBurglary.onCellChangeCallback(onCellChange)
+    -- TODO: give a note with the heist details.
+end
 
 local function onStolenCallback(data)
     -- called when we steal an item.
@@ -173,6 +202,19 @@ local function onStolenCallback(data)
     -- used to confirm that the player didn't cheat by getting the item 
     -- from somewhere else.
     settings.debugPrint("stole " .. data.itemRecord.id .. " from " .. data.owner.recordId)
+
+    local currentJob = persistedState.players[data.player.id].current
+    if (currentJob == nil) or (currentJob.itemInstance.id ~= data.itemInstance) then
+        return
+    end
+    -- we stole the right item.
+    if data.caught then
+        settings.debugPrint("job "..currentJob.jobID.." entered stolen_good state")
+        types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_BAD, data.player)
+    else
+        settings.debugPrint("job "..currentJob.jobID.." entered stolen_bad state")
+        types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_GOOD, data.player)
+    end
 end
 
 interfaces.ErnBurglary.onStolenCallback(onStolenCallback)
