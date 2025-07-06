@@ -32,7 +32,7 @@ end
 -- Init settings first to init storage which is used everywhere.
 settings.initSettings()
 
-local persistedState = {}
+local persistedState = nil
 
 local function saveState()
     return persistedState
@@ -40,7 +40,9 @@ end
 
 local function loadState(saved)
     if saved == nil then
-        persistedState = {}
+        persistedState = {
+            currentJobID = 0
+        }
     else
         persistedState = saved
     end
@@ -50,7 +52,8 @@ local function getDoors(cell)
     local doors = {}
     for _, door in ipairs(common.shuffle(cell:getAll(types.Door))) do
         local destCell = types.Door.destCell(door)
-        if types.Door.isTeleport(door) and (destCell ~= nil) and (destCell.isExterior == false) and (destCell:hasTag("QuasiExterior") == false) then
+        if types.Door.isTeleport(door) and (destCell ~= nil) and (destCell.isExterior == false) and
+            (destCell:hasTag("QuasiExterior") == false) then
             table.insert(doors, door)
         end
     end
@@ -61,18 +64,18 @@ local function randomMacguffinForNPC(npcRecordId)
     local previousJob = persistedState["previousJob"]
     local record = types.NPC.record(npcRecordId)
     if record == nil then
-        error("no record for npc: "..npcRecordId)
+        error("no record for npc: " .. npcRecordId)
     end
 
     local macguffin = nil
     for _, potenialMacguffin in ipairs(common.shuffle(macguffins.macguffins)) do
         if (previousJob ~= nil) and (previousJob.category == potenialMacguffin.category) then
-            settings.debugPrint("Skipping repeated macguffin category "..previousJob.category)
+            settings.debugPrint("Skipping repeated macguffin category " .. previousJob.category)
         elseif macguffins.filter(potenialMacguffin, record) then
             return potenialMacguffin
         end
     end
-    settings.debugPrint("no suitable macguffins for npc: "..npcRecordId)
+    settings.debugPrint("no suitable macguffins for npc: " .. npcRecordId)
     return nil
 end
 
@@ -84,7 +87,7 @@ local function randomJob()
     local parentCell = nil
     for _, cell in ipairs(common.shuffle(cells.allowedCells)) do
         if (previousJob ~= nil) and (previousJob.extCellID == cell.id) then
-            settings.debugPrint("Skipping repeated cell "..cell.id)
+            settings.debugPrint("Skipping repeated cell " .. cell.id)
         else
             parentCell = cell
             break
@@ -104,12 +107,15 @@ local function randomJob()
     for _, door in ipairs(getDoors(parentCell)) do
         for _, container in ipairs(common.shuffle(door.destCell:getAll(types.Container))) do
             if (container.owner ~= nil) and (container.owner.recordId ~= nil) then
-                -- a container with an owner.
-                macguffin = randomMacguffinForNPC(container.owner.recordId)
-                if macguffin ~= nil then
-                    targetContainer = container
-                    mark = container.owner.recordId
-                    break
+                local containerRecord = container.record(container)
+                if (containerRecord.isOrganic == false) and (containerRecord.isRespawning == false) then
+                    -- a stable container with an owner.
+                    macguffin = randomMacguffinForNPC(container.owner.recordId)
+                    if macguffin ~= nil then
+                        targetContainer = container
+                        mark = container.owner.recordId
+                        break
+                    end
                 end
             end
         end
@@ -118,8 +124,24 @@ local function randomJob()
         error("failed to find a macguffin")
         return
     end
-end
 
+    -- make the new job (with a unique id)
+    persistedState.currentJobID = persistedState.currentJobID + 1
+    local job = {
+        jobID = persistedState.currentJobID,
+        ownerRecordId = mark,
+        extCellID = parentCell.id,
+        targetContainerId = targetContainer.id,
+        category = macguffin.category,
+        type = macguffin.type,
+        recordId = macguffin.recordId
+    }
+
+    -- place the macguffin
+    local macguffinInstance = world.createObject(macguffin.record.id, 1)
+    macguffinInstance:addScript("scripts\\" .. settings.MOD_NAME .. "\\item.lua", job)
+    macguffinInstance:moveInto(targetContainer)
+end
 
 local function newJob(data)
     if data == nil then
@@ -139,7 +161,7 @@ end
 local function onCellChange(data)
     -- called when we enter a cell.
     -- used to place the macguffin.
-    settings.debugPrint("entered "..data.newCellID)
+    settings.debugPrint("entered " .. data.newCellID)
 end
 
 interfaces.ErnBurglary.onCellChangeCallback(onCellChange)
@@ -150,17 +172,15 @@ local function onStolenCallback(data)
     -- the `caught` field will be used to determine if we get the full reward or not.
     -- used to confirm that the player didn't cheat by getting the item 
     -- from somewhere else.
-    settings.debugPrint("stole "..data.itemRecord.id.." from "..data.owner.recordId)
+    settings.debugPrint("stole " .. data.itemRecord.id .. " from " .. data.owner.recordId)
 end
 
 interfaces.ErnBurglary.onStolenCallback(onStolenCallback)
 
-
 return {
-    eventHandlers = {
-    },
+    eventHandlers = {},
     engineHandlers = {
         onSave = saveState,
-        onLoad = loadState,
+        onLoad = loadState
     }
 }
