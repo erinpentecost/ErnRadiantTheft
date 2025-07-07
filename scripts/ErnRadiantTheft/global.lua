@@ -16,6 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]] local settings = require("scripts.ErnRadiantTheft.settings")
 local common = require("scripts.ErnRadiantTheft.common")
+local infrequent = require("scripts.ErnRadiantTheft.infrequent")
 local cells = require("scripts.ErnRadiantTheft.cells")
 local macguffins = require("scripts.ErnRadiantTheft.macguffins")
 local interfaces = require('openmw.interfaces')
@@ -45,11 +46,32 @@ local function loadState(saved)
             -- currentJobID is kept to maintain globally unique ids
             currentJobID = 0,
             -- players is a map of player-specific state to track.
+            -- the index is the player id.
             players = {}
         }
     else
         persistedState = saved
     end
+end
+
+local function initPlayer(player)
+    persistedState.players[player.id] = {
+        -- each player has a list of jobs. lowest index is current one.
+        jobs = {},
+        lastQuestStage = -1
+    }
+end
+
+local function getState(player)
+    local state = persistedState.players[player.id]
+    if state == nil then
+        state = initPlayer(player)
+    end
+    return state
+end
+
+local function saveState(player, state)
+    persistedState.players[player.id] = state
 end
 
 local function getDoors(cell)
@@ -64,8 +86,7 @@ local function getDoors(cell)
     return doors
 end
 
-local function randomMacguffinForNPC(npcRecordId)
-    local previousJob = persistedState["previousJob"]
+local function randomMacguffinForNPC(npcRecordId, previousJob)
     local record = types.NPC.record(npcRecordId)
     if record == nil then
         error("no record for npc: " .. npcRecordId)
@@ -92,18 +113,24 @@ local expireCallback = async:registerTimerCallback(settings.MOD_NAME .. "_expire
         error("no jobID for quest expiration")
     end
     local state = persistedState.players[data.player.id]
-    if (state ~= nil) and (state.current.jobID == data.jobID) then
+    local currentJob = state.jobs[1]
+    if (state ~= nil) and (currentJob.jobID == data.jobID) then
         -- only fail the quest if the item hasn't been stolen yet.
         local quest = types.Player.quests(data.player)[common.questID]
         if quest.stage == common.questStage.STARTED then
             settings.debugPrint("quest expired")
             -- fail the quest.
             quest:addJournalEntry(common.questStage.EXPIRED, data.player)
-            -- delete the item
-            state.current.itemInstance:remove(1)
+            -- delete the item.
+            -- this won't always work (like if there's a stack that deleted the original)
+            currentJob.itemInstance:remove(1)
         end
     end
 end)
+
+local function giveNoteToPlayer(player, job)
+    -- TODO
+end
 
 local function newJob(player)
     if player == nil then
@@ -113,8 +140,10 @@ local function newJob(player)
         error("player.id is nil")
         return
     end
+    local state = getState(player)
+
     -- make sure we don't get duplicates back-to-back.
-    local previousJob = persistedState.players[player.id].previous
+    local previousJob = state.jobs[1]
 
     -- determine parent cell.
     local parentCell = nil
@@ -143,7 +172,7 @@ local function newJob(player)
                 local containerRecord = container.record(container)
                 if (containerRecord.isOrganic == false) and (containerRecord.isRespawning == false) then
                     -- a stable container with an owner.
-                    macguffin = randomMacguffinForNPC(container.owner.recordId)
+                    macguffin = randomMacguffinForNPC(container.owner.recordId, previousJob)
                     if macguffin ~= nil then
                         targetContainer = container
                         mark = container.owner.recordId
@@ -177,14 +206,9 @@ local function newJob(player)
     macguffinInstance:addScript("scripts\\" .. settings.MOD_NAME .. "\\item.lua", job)
     macguffinInstance:moveInto(targetContainer)
 
-    -- set the quest stage (this is done through mwscript in dialogue)
-    -- types.Player.quests(player)[common.questID]:addJournalEntry(common.questStage.STARTED, player)
-
     -- update current job
-    if persistedState.players[player.id].current ~= nil then
-        persistedState.players[player.id].previous = persistedState.players[player.id].current
-    end
-    persistedState.players[player.id].current = job
+    table.insert(state.jobs, 1, job)
+    saveState(player, state)
 
     -- set the expiration for 5 in-game days from now.
     async:newSimulationTimer(60 * 60 * 24 * 5, expireCallback, {
@@ -192,7 +216,7 @@ local function newJob(player)
         jobID = job.jobID
     })
 
-    -- TODO: give a note with the heist details.
+    giveNoteToPlayer(player, job)
 end
 
 local function onStolenCallback(data)
@@ -203,7 +227,9 @@ local function onStolenCallback(data)
     -- from somewhere else.
     settings.debugPrint("stole " .. data.itemRecord.id .. " from " .. data.owner.recordId)
 
-    local currentJob = persistedState.players[data.player.id].current
+    local state = getState(data.player)
+
+    local currentJob = state.jobs[1]
     if (currentJob == nil) or (currentJob.itemInstance.id ~= data.itemInstance) then
         return
     end
@@ -226,8 +252,82 @@ end
 
 interfaces.ErnBurglary.onStolenCallback(onStolenCallback)
 
--- TODO: watch for an event where the macguffin is lost
--- TODO: watch for quest stage changed to start, then trigger newJob()
+local function playerHasItemRecord(player, itemRecord)
+    for _, item in ipairs(types.Actor.inventory(player):getAll()) do
+        -- use recordId instead of instance id to work around stack shenanigans.
+        if item.recordId == itemRecord then
+            return true
+        end
+    end
+    return false
+end
+
+local infrequentMap = infrequent.FunctionCollection:new()
+
+local function onInfrequentUpdate(dt)
+    for _, player in ipairs(world.players) do
+        local state = getState(player)
+
+        -- monitor for quest start.
+        local quest = types.Player.quests(player)[common.questID]
+
+        if quest.stage ~= state.lastQuestStage then
+            settings.debugPrint("quest stage changed from " .. tostring(state.lastQuestStage) .. " to " ..
+                                    tostring(quest.stage))
+            -- quest stage changed somehow.
+            local previousStage = state.lastQuestStage
+            state.lastQuestStage = quest.stage
+            saveState(state)
+            if quest.stage == common.questStage.STARTED then
+                -- start up the new job.
+                -- this will modify state, so we should exit after this.
+                newJob(player)
+            end
+
+            -- quit after we see a state change.
+            return
+        end
+
+        -- monitor for inventory changes.
+        -- use quest stage to bridge into mwscript, since mwscript doesn't
+        -- know which item it is looking for.
+        local currentJob = state.jobs[1]
+        if currentJob ~= nil then
+            local hasMacguffin = playerHasItemRecord(player, state.jobs[1].recordId)
+            if (quest.stage == common.questStage.STOLEN_BAD) and (hasMacguffin == false) then
+                quest.stage = common.questStage.STOLEN_BAD_LOST
+                state.lastQuestStage = quest.stage
+            elseif (quest.stage == common.questStage.STOLEN_GOOD) and (hasMacguffin == false) then
+                quest.stage = common.questStage.STOLEN_GOOD_LOST
+                state.lastQuestStage = quest.stage
+            elseif (quest.stage == common.questStage.STOLEN_BAD_LOST) and (hasMacguffin) then
+                quest.stage = common.questStage.STOLEN_BAD
+                state.lastQuestStage = quest.stage
+            elseif (quest.stage == common.questStage.STOLEN_GOOD_LOST) and (hasMacguffin) then
+                quest.stage = common.questStage.STOLEN_GOOD
+                state.lastQuestStage = quest.stage
+            end
+        end
+
+        -- check for new membership into thieves guild
+        if (quest.stage <= 0) or (quest.stage == false) then
+            -- quest hasn't started. we need to get to first stage so the dialogue topic
+            -- is available.
+            local thievesRank = types.NPC.getFactionRank(player, "Thieves Guild")
+            if thievesRank > 0 then
+                quest:addJournalEntry(common.questStage.AVAILABLE, player)
+            end
+        end
+
+        saveState(player, state)
+    end
+end
+
+infrequentMap:addCallback("onInfrequentUpdate", 1.0, onInfrequentUpdate)
+
+local function onUpdate(dt)
+    infrequentMap:onUpdate(dt)
+end
 
 return {
     eventHandlers = {},

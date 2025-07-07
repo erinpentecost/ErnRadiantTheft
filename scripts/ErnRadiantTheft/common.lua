@@ -26,14 +26,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 end
 
 local questStage = {
-    AVAILABLE = 5,
-    STARTED = 10,
+    AVAILABLE = 5, -- we need to set this so the player knows the mod is installed
+    STARTED = 10, -- player got a heist. this is set through mwscript!
     STOLEN_GOOD = 20,
-    STOLEN_GOOD_LOST = 21,
+    STOLEN_GOOD_LOST = 21, -- no journal entry for this.
     STOLEN_BAD = 30,
-    STOLEN_BAD_LOST = 31,
-    EXPIRED = 40,
-    COMPLETED = 50
+    STOLEN_BAD_LOST = 31, -- no journal entry for this.
+    EXPIRED = 40, -- an end state.
+    COMPLETED = 50 -- this is set through mwscript! an end state.
 }
 
 return {
