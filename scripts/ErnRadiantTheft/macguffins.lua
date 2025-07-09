@@ -100,9 +100,13 @@ local function loadMacguffins()
         return
     end
 
-    for _, line in ipairs(handle:lines()) do
+    for line in handle:lines() do
         -- there should be three fields: category, itemtype, itemrecordid.
-        local split = string.gmatch(line, "[^,]+")
+        local split = {}
+        for token in string.gmatch(line, "[^,]+") do
+            table.insert(split, token)
+        end
+
         if #split ~= 3 then
             error("line doesn't have 3 fields: "..line)
         else

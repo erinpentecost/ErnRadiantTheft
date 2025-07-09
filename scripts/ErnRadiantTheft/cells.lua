@@ -24,28 +24,34 @@ local world = require('openmw.world')
 -- this is just a list of Cell objects.
 local allowedCells = {}
 
-local function loadAllowedCells()
+local function loadAllowedCellsFromFile(path)
     -- read allow list.
     -- this can contain cells that don't exist.
     -- this can consist of cell names or cell ids.
     local handle = nil
     local err = nil
-    handle, err = vfs.open("scripts\\"..settings.MOD_NAME.."\\cells.txt")
+    handle, err = vfs.open(path)
     if handle == nil then
         error(err)
         return
     end
     local allowedNames = {}
-    for _, line in ipairs(handle:lines()) do
+    for line in handle:lines() do
         allowedNames[string.gsub(line, "%s", "")] = true
     end
     -- add cells in our allowlist
     for _, cell in ipairs(world.cells) do
-        if allowedNames[cell.id] or allowedNames[cell.name] then
+        if (cell.name ~= "" and cell.name ~= nil) and (allowedNames[cell.id] or allowedNames[cell.name]) then
             table.insert(allowedCells, cell)
         end
     end
     settings.debugPrint("Loaded "..tostring(#allowedCells).." exterior cells into the allowlist.")
+end
+
+local function loadAllowedCells()
+    for fileName in vfs.pathsWithPrefix("scripts\\"..settings.MOD_NAME.."\\cells\\") do
+        loadAllowedCellsFromFile(fileName)
+    end
 end
 
 loadAllowedCells()

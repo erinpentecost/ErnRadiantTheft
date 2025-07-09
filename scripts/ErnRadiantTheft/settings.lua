@@ -23,7 +23,7 @@ local MOD_NAME = "ErnRadiantTheft"
 local SettingsGameplay = storage.globalSection("SettingsGameplay" .. MOD_NAME)
 
 local function debugMode()
-    return SettingsUI:get("debugMode")
+    return SettingsGameplay:get("debugMode")
 end
 
 
@@ -56,38 +56,10 @@ local function initSettings()
         page = MOD_NAME,
         permanentStorage = false,
         settings = {{
-            key = "bountyScale",
-            name = "bountyScale_name",
-            description = "bountyScale_description",
-            default = 1,
-            renderer = "number",
-            argument = {
-                integer = false,
-                min = 0,
-                max = 100
-            }
-        }, {
-            key = "trespassFine",
-            name = "trespassFine_name",
-            description = "trespassFine_description",
-            default = 0,
-            renderer = "number",
-            argument = {
-                integer = true,
-                min = 0,
-                max = 1000
-            }
-        }, {
-            key = "revertBounties",
-            name = "revertBounties_name",
-            description = "revertBounties_description",
-            default = true,
-            renderer = "checkbox"
-        }, {
-            key = "lenientFactions",
-            name = "lenientFactions_name",
-            description = "lenientFactions_description",
-            default = true,
+            key = "debugMode",
+            name = "debugMode_name",
+            description = "debugMode_description",
+            default = false,
             renderer = "checkbox"
         }}
     }

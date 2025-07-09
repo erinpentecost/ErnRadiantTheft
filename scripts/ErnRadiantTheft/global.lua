@@ -37,7 +37,9 @@ settings.initSettings()
 local persistedState = nil
 
 local function saveState()
-    return persistedState
+    if persistedState ~= nil then
+        return persistedState
+    end
 end
 
 local function loadState(saved)
@@ -57,8 +59,7 @@ end
 local function initPlayer(player)
     persistedState.players[player.id] = {
         -- each player has a list of jobs. lowest index is current one.
-        jobs = {},
-        lastQuestStage = -1
+        jobs = {}
     }
 end
 
@@ -86,7 +87,7 @@ local function getDoors(cell)
     return doors
 end
 
-local function randomMacguffinForNPC(npcRecordId, previousJob)
+local function randomMacguffinForNPC(npcRecordId, forbiddenCategory)
     local record = types.NPC.record(npcRecordId)
     if record == nil then
         error("no record for npc: " .. npcRecordId)
@@ -94,8 +95,8 @@ local function randomMacguffinForNPC(npcRecordId, previousJob)
 
     local macguffin = nil
     for _, potenialMacguffin in ipairs(common.shuffle(macguffins.macguffins)) do
-        if (previousJob ~= nil) and (previousJob.category == potenialMacguffin.category) then
-            settings.debugPrint("Skipping repeated macguffin category " .. previousJob.category)
+        if (forbiddenCategory ~= nil) and (forbiddenCategory == potenialMacguffin.category) then
+            settings.debugPrint("Skipping repeated macguffin category " .. forbiddenCategory)
         elseif macguffins.filter(potenialMacguffin, record) then
             return potenialMacguffin
         end
@@ -132,6 +133,69 @@ local function giveNoteToPlayer(player, job)
     -- TODO
 end
 
+local function setupMacguffinInCell(cell, forbiddenCategory)
+    if cell == nil then
+        error("failed to find cell")
+        return nil
+    end
+
+    -- now we have to load the cell so we can get all the doors.
+    -- pick a suitable interior cell.
+    -- there should be owned containers in it.
+    local targetContainer = nil
+    local macguffin = nil
+    local mark = nil
+    for _, container in ipairs(common.shuffle(cell:getAll(types.Container))) do
+        if (container.owner ~= nil) and (container.owner.recordId ~= nil) then
+            local containerRecord = container.record(container)
+            if (containerRecord.isOrganic == false) and (containerRecord.isRespawning == false) then
+                -- a stable container with an owner.
+                macguffin = randomMacguffinForNPC(container.owner.recordId, forbiddenCategory)
+                if macguffin ~= nil then
+                    targetContainer = container
+                    mark = container.owner.recordId
+                    break
+                end
+            end
+        end
+    end
+    if macguffin == nil then
+        error("failed to find a macguffin")
+        return nil
+    end
+
+    return {
+        targetContainer = targetContainer,
+        macguffin = macguffin,
+        mark = mark
+    }
+end
+
+local function setupMacguffinInCells(parentCell, forbiddenCategory)
+    -- recurse down to depth of 3.
+    -- add all cells to a list
+    -- randomly select from list.
+    -- this lets us get into cantons and under-skarr.
+
+    local cells = {}
+    table.insert(cells, parentCell)
+    for _, door in ipairs(getDoors(parentCell)) do
+        local childCell = types.Door.destCell(door)
+        table.insert(cells, childCell)
+        for _, door in ipairs(getDoors(childCell)) do
+            table.insert(cells, types.Door.destCell(door))
+        end
+    end
+
+    for _, cell in ipairs(common.shuffle(cells)) do
+        local setup = setupMacguffinInCell(cell, forbiddenCategory)
+        if setup ~= nil then
+            return setup
+        end
+    end
+    return nil
+end
+
 local function newJob(player)
     if player == nil then
         error("player is nil")
@@ -163,29 +227,18 @@ local function newJob(player)
     -- now we have to load the cell so we can get all the doors.
     -- pick a suitable interior cell.
     -- there should be owned containers in it.
-    local targetContainer = nil
-    local macguffin = nil
-    local mark = nil
-    for _, door in ipairs(getDoors(parentCell)) do
-        for _, container in ipairs(common.shuffle(door.destCell:getAll(types.Container))) do
-            if (container.owner ~= nil) and (container.owner.recordId ~= nil) then
-                local containerRecord = container.record(container)
-                if (containerRecord.isOrganic == false) and (containerRecord.isRespawning == false) then
-                    -- a stable container with an owner.
-                    macguffin = randomMacguffinForNPC(container.owner.recordId, previousJob)
-                    if macguffin ~= nil then
-                        targetContainer = container
-                        mark = container.owner.recordId
-                        break
-                    end
-                end
-            end
-        end
+    local forbiddenCategory = nil
+    if previousJob ~= nil then
+        forbiddenCategory = previousJob.category
     end
-    if macguffin == nil then
-        error("failed to find a macguffin")
+    local setup = setupMacguffinInCells(parentCell, forbiddenCategory)
+    if setup == nil then
+        error("failed to setup macguffin")
         return
     end
+    local targetContainer = setup.targetContainer
+    local macguffin = setup.macguffin
+    local mark = setup.mark
 
     -- make the new job (with a unique id)
     local macguffinInstance = world.createObject(macguffin.record.id, 1)
@@ -252,6 +305,14 @@ end
 
 interfaces.ErnBurglary.onStolenCallback(onStolenCallback)
 
+local function onQuestUpdate(data)
+    if data.stage == common.questStage.STARTED then
+        -- start up the new job.
+        -- this will modify state, so we should exit after this.
+        newJob(data.player)
+    end
+end
+
 local function playerHasItemRecord(player, itemRecord)
     for _, item in ipairs(types.Actor.inventory(player):getAll()) do
         -- use recordId instead of instance id to work around stack shenanigans.
@@ -271,23 +332,6 @@ local function onInfrequentUpdate(dt)
         -- monitor for quest start.
         local quest = types.Player.quests(player)[common.questID]
 
-        if quest.stage ~= state.lastQuestStage then
-            settings.debugPrint("quest stage changed from " .. tostring(state.lastQuestStage) .. " to " ..
-                                    tostring(quest.stage))
-            -- quest stage changed somehow.
-            local previousStage = state.lastQuestStage
-            state.lastQuestStage = quest.stage
-            saveState(state)
-            if quest.stage == common.questStage.STARTED then
-                -- start up the new job.
-                -- this will modify state, so we should exit after this.
-                newJob(player)
-            end
-
-            -- quit after we see a state change.
-            return
-        end
-
         -- monitor for inventory changes.
         -- use quest stage to bridge into mwscript, since mwscript doesn't
         -- know which item it is looking for.
@@ -296,16 +340,12 @@ local function onInfrequentUpdate(dt)
             local hasMacguffin = playerHasItemRecord(player, state.jobs[1].recordId)
             if (quest.stage == common.questStage.STOLEN_BAD) and (hasMacguffin == false) then
                 quest.stage = common.questStage.STOLEN_BAD_LOST
-                state.lastQuestStage = quest.stage
             elseif (quest.stage == common.questStage.STOLEN_GOOD) and (hasMacguffin == false) then
                 quest.stage = common.questStage.STOLEN_GOOD_LOST
-                state.lastQuestStage = quest.stage
             elseif (quest.stage == common.questStage.STOLEN_BAD_LOST) and (hasMacguffin) then
                 quest.stage = common.questStage.STOLEN_BAD
-                state.lastQuestStage = quest.stage
             elseif (quest.stage == common.questStage.STOLEN_GOOD_LOST) and (hasMacguffin) then
                 quest.stage = common.questStage.STOLEN_GOOD
-                state.lastQuestStage = quest.stage
             end
         end
 
@@ -330,7 +370,9 @@ local function onUpdate(dt)
 end
 
 return {
-    eventHandlers = {},
+    eventHandlers = {
+        [settings.MOD_NAME .. "onQuestUpdate"] = onQuestUpdate
+    },
     engineHandlers = {
         onSave = saveState,
         onLoad = loadState
