@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 local common = require("scripts.ErnRadiantTheft.common")
 local infrequent = require("scripts.ErnRadiantTheft.infrequent")
 local cells = require("scripts.ErnRadiantTheft.cells")
+local note = require("scripts.ErnRadiantTheft.note")
 local macguffins = require("scripts.ErnRadiantTheft.macguffins")
 local interfaces = require('openmw.interfaces')
 local async = require('openmw.async')
@@ -105,34 +106,6 @@ local function randomMacguffinForNPC(npcRecordId, forbiddenCategory)
     return nil
 end
 
-local expireCallback = async:registerTimerCallback(settings.MOD_NAME .. "_expire_quest_callback", function(data)
-    if data.player == nil then
-        error("no player for quest expiration")
-        return
-    end
-    if data.jobID == nil then
-        error("no jobID for quest expiration")
-    end
-    local state = persistedState.players[data.player.id]
-    local currentJob = state.jobs[1]
-    if (state ~= nil) and (currentJob.jobID == data.jobID) then
-        -- only fail the quest if the item hasn't been stolen yet.
-        local quest = types.Player.quests(data.player)[common.questID]
-        if quest.stage == common.questStage.STARTED then
-            settings.debugPrint("quest expired")
-            -- fail the quest.
-            quest:addJournalEntry(common.questStage.EXPIRED, data.player)
-            -- delete the item.
-            -- this won't always work (like if there's a stack that deleted the original)
-            currentJob.itemInstance:remove(1)
-        end
-    end
-end)
-
-local function giveNoteToPlayer(player, job)
-    -- TODO
-end
-
 local function setupMacguffinInCell(cell, forbiddenCategory)
     if cell == nil then
         error("failed to find cell")
@@ -152,9 +125,12 @@ local function setupMacguffinInCell(cell, forbiddenCategory)
                 -- a stable container with an owner.
                 macguffin = randomMacguffinForNPC(container.owner.recordId, forbiddenCategory)
                 if macguffin ~= nil then
-                    targetContainer = container
-                    mark = container.owner.recordId
-                    break
+                    local ownerRecord = types.NPC.record(container.owner.recordId)
+                    if ownerRecord ~= nil then
+                        mark = ownerRecord
+                        targetContainer = container
+                        break
+                    end
                 end
             end
         end
@@ -246,7 +222,7 @@ local function newJob(player)
     local job = {
         jobID = persistedState.currentJobID,
         playerID = player.id,
-        ownerRecordId = mark,
+        ownerRecordId = mark.id,
         extCellID = parentCell.id,
         targetContainerId = targetContainer.id,
         category = macguffin.category,
@@ -263,13 +239,7 @@ local function newJob(player)
     table.insert(state.jobs, 1, job)
     saveState(player, state)
 
-    -- set the expiration for 5 in-game days from now.
-    async:newSimulationTimer(60 * 60 * 24 * 5, expireCallback, {
-        player,
-        jobID = job.jobID
-    })
-
-    giveNoteToPlayer(player, job)
+    note.giveNote(player, job.category, macguffin.record, mark, parentCell)
 end
 
 local function onStolenCallback(data)

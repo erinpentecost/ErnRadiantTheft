@@ -120,7 +120,7 @@ local function loadMacguffins()
                 error("couldn't find record for line: "..line)
             else
                 table.insert(macguffins, {
-                    category = split[1],
+                    category = string.lower(split[1]),
                     type = split[2],
                     record = record,
                 })

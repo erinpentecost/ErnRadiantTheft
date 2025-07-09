@@ -10,3 +10,51 @@ modSettingsGameplayDesc: "Change how gameplay mechanics work."
 debugMode_name: "Debug Mode"
 debugMode_description: "Print debug messages."
 
+heist_blackmail_name: "Heist: Blackmail"
+heist_blackmail_body: | 
+  <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
+  Heist: Blackmail<BR><BR>
+  <DIV ALIGN="LEFT"><BR><BR>
+  We've heard rumours that {npc} in {location} is keeping a shameful secret. Look for some hard incriminating evidence so we might blackmail them.
+  <BR>
+
+heist_forgery_name: "Heist: Forgery"
+heist_forgery_body: | 
+  <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
+  Heist: Forgery<BR><BR>
+  <DIV ALIGN="LEFT"><BR><BR>
+  We need you to obtain {npc}'s {item} so we can forge some documents. You can find them in {location}.
+  <BR>
+
+heist_trade_secrets_name: "Heist: Trade Secrets"
+heist_trade_secrets_body: | 
+  <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
+  Heist: Trade Secrets<BR><BR>
+  <DIV ALIGN="LEFT"><BR><BR>
+  {npc}'s got their hands on a {item} that our client is interested in. They were last known to be in {location}.
+  <BR>
+
+heist_dwemer_name: "Heist: Dwemer Contraband"
+heist_dwemer_body: | 
+  <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
+  Heist: Dwemer Contraband<BR><BR>
+  <DIV ALIGN="LEFT"><BR><BR>
+  A {item} found its way into {npc}'s possesion. Go to {location} and retrieve it for us.
+  <BR>
+
+heist_skooma_name: "Heist: Skooma"
+heist_skooma_body: | 
+  <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
+  Heist: Skooma<BR><BR>
+  <DIV ALIGN="LEFT"><BR><BR>
+  We believe {npc} in {location} has a stash of {item}. Go lighten their pockets.
+  <BR>
+
+heist_necromancy_name: "Heist: Necromancy"
+heist_necromancy_body: | 
+  <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
+  Heist: Necromancy<BR><BR>
+  <DIV ALIGN="LEFT"><BR><BR>
+  Our client is paying us for any evidence of necromancy. We believe {npc} in {location} has an incriminating book on the subject.
+  <BR>
+
