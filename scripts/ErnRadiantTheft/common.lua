@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 end
 
 local questStage = {
+    DISABLED = 1,
     AVAILABLE = 5, -- we need to set this so the player knows the mod is installed
     STARTED = 10, -- player got a heist. this is set through mwscript!
     STOLEN_GOOD = 20,

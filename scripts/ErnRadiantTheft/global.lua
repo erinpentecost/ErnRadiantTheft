@@ -276,6 +276,10 @@ end
 interfaces.ErnBurglary.onStolenCallback(onStolenCallback)
 
 local function onQuestUpdate(data)
+    if settings.disable then
+        settings.debugPrint("disabled")
+        return
+    end
     if data.stage == common.questStage.STARTED then
         -- start up the new job.
         -- this will modify state, so we should exit after this.
@@ -299,8 +303,13 @@ local function onInfrequentUpdate(dt)
     for _, player in ipairs(world.players) do
         local state = getState(player)
 
-        -- monitor for quest start.
         local quest = types.Player.quests(player)[common.questID]
+
+        if (settings.disable) and (quest.stage ~= common.questStage.DISABLED) then
+            print("Disabling quest.")
+            quest.stage = common.questStage.DISABLED
+            return
+        end
 
         -- monitor for inventory changes.
         -- use quest stage to bridge into mwscript, since mwscript doesn't
@@ -320,11 +329,12 @@ local function onInfrequentUpdate(dt)
         end
 
         -- check for new membership into thieves guild
-        if (quest.stage <= 0) or (quest.stage == false) then
+        if (settings.disable ~= true) and ((quest.stage <= common.questStage.DISABLED) or (quest.started == false)) then
             -- quest hasn't started. we need to get to first stage so the dialogue topic
             -- is available.
             local thievesRank = types.NPC.getFactionRank(player, "Thieves Guild")
             if thievesRank > 0 then
+                print("Enabling quest.")
                 quest:addJournalEntry(common.questStage.AVAILABLE, player)
             end
         end
