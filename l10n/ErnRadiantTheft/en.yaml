@@ -47,7 +47,7 @@ heist_skooma_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Skooma<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
-  We believe {npc} in {location} has a stash of {item}. Go lighten their pockets.
+  We believe {npc} in {location} has a stash of Skooma. Bring back a {item}.
   <BR>
 
 heist_necromancy_name: "Heist #{number}: Necromancy"
@@ -58,3 +58,10 @@ heist_necromancy_body: |
   Our client is paying us for any evidence of necromancy. We believe {npc} in {location} has an incriminating book on the subject.
   <BR>
 
+heist_ayleid_name: "Heist #{number}: Ayleid Artifact"
+heist_ayleid_body: | 
+  <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
+  Heist: Ayleid Artifact<BR><BR>
+  <DIV ALIGN="LEFT"><BR><BR>
+  We got word that {npc} came into possession of a rare Ayleid artifact. You can find them in {location}. 
+  <BR>

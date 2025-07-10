@@ -43,6 +43,12 @@ local function getRecord(itemtype, id)
     if itemtype == "Clothing" then
         return types.Clothing.records[id]
     end
+    if itemtype == "Weapon" then
+        return types.Weapon.records[id]
+    end
+    if itemtype == "Apparatus" then
+        return types.Apparatus.records[id]
+    end
     error("unknown type: "..itemtype)
     return nil
 end
