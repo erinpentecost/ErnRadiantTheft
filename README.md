@@ -1,7 +1,12 @@
 # ErnRadiantTheft
 Unlimited theft jobs from the Thieves Guild.
 
-Just ask Aengoth the Jeweler, Big Helende, or Sugar-Lips Habasi for any *tip*s.
+Just ask Aengoth the Jeweler, Big Helende, or Sugar-Lips Habasi about pulling off a *heist*.
+
+If you are adding this mod mid-playthrough, you'll need to run this in the console:
+```
+AddTopic "heist"
+```
 
 ## Quest Layout
 

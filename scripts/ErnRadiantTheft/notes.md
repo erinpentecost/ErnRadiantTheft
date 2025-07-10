@@ -1,0 +1,1 @@
+Dialogues: https://en.uesp.net/wiki/Morrowind_Mod:Creating_dialogue_in_Morrowind

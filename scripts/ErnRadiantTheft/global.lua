@@ -35,26 +35,20 @@ end
 -- Init settings first to init storage which is used everywhere.
 settings.initSettings()
 
-local persistedState = nil
+local persistedState = {
+    -- currentJobID is kept to maintain globally unique ids
+    currentJobID = 0,
+    -- players is a map of player-specific state to track.
+    -- the index is the player id.
+    players = {}
+        }
 
 local function saveState()
-    if persistedState ~= nil then
-        return persistedState
-    end
+    return persistedState
 end
 
 local function loadState(saved)
-    if saved == nil then
-        persistedState = {
-            -- currentJobID is kept to maintain globally unique ids
-            currentJobID = 0,
-            -- players is a map of player-specific state to track.
-            -- the index is the player id.
-            players = {}
-        }
-    else
-        persistedState = saved
-    end
+    persistedState = saved
 end
 
 local function initPlayer(player)
@@ -64,7 +58,7 @@ local function initPlayer(player)
     }
 end
 
-local function getState(player)
+local function getPlayerState(player)
     local state = persistedState.players[player.id]
     if state == nil then
         state = initPlayer(player)
@@ -72,7 +66,7 @@ local function getState(player)
     return state
 end
 
-local function saveState(player, state)
+local function savePlayerState(player, state)
     persistedState.players[player.id] = state
 end
 
@@ -120,7 +114,7 @@ local function setupMacguffinInCell(cell, forbiddenCategory)
     local mark = nil
     for _, container in ipairs(common.shuffle(cell:getAll(types.Container))) do
         if (container.owner ~= nil) and (container.owner.recordId ~= nil) then
-            local containerRecord = container.record(container)
+            local containerRecord = types.Container.record(container)
             if (containerRecord.isOrganic == false) and (containerRecord.isRespawning == false) then
                 -- a stable container with an owner.
                 macguffin = randomMacguffinForNPC(container.owner.recordId, forbiddenCategory)
@@ -180,7 +174,7 @@ local function newJob(player)
         error("player.id is nil")
         return
     end
-    local state = getState(player)
+    local state = getPlayerState(player)
 
     -- make sure we don't get duplicates back-to-back.
     local previousJob = state.jobs[1]
@@ -237,7 +231,7 @@ local function newJob(player)
 
     -- update current job
     table.insert(state.jobs, 1, job)
-    saveState(player, state)
+    savePlayerState(player, state)
 
     note.giveNote(player, job.category, macguffin.record, mark, parentCell)
 end
@@ -250,7 +244,7 @@ local function onStolenCallback(data)
     -- from somewhere else.
     settings.debugPrint("stole " .. data.itemRecord.id .. " from " .. data.owner.recordId)
 
-    local state = getState(data.player)
+    local state = getPlayerState(data.player)
 
     local currentJob = state.jobs[1]
     if (currentJob == nil) or (currentJob.itemInstance.id ~= data.itemInstance) then
@@ -276,11 +270,12 @@ end
 interfaces.ErnBurglary.onStolenCallback(onStolenCallback)
 
 local function onQuestUpdate(data)
-    if settings.disable then
+    if settings.disable() then
         settings.debugPrint("disabled")
         return
     end
     if data.stage == common.questStage.STARTED then
+        settings.debugPrint("initializing new job")
         -- start up the new job.
         -- this will modify state, so we should exit after this.
         newJob(data.player)
@@ -301,11 +296,13 @@ local infrequentMap = infrequent.FunctionCollection:new()
 
 local function onInfrequentUpdate(dt)
     for _, player in ipairs(world.players) do
-        local state = getState(player)
+        local state = getPlayerState(player)
 
         local quest = types.Player.quests(player)[common.questID]
 
-        if (settings.disable) and (quest.stage ~= common.questStage.DISABLED) then
+        settings.debugPrint("checking player "..aux_util.deepToString(quest, 3))
+
+        if (settings.disable()) and (quest.stage ~= common.questStage.DISABLED) then
             print("Disabling quest.")
             quest.stage = common.questStage.DISABLED
             return
@@ -329,7 +326,7 @@ local function onInfrequentUpdate(dt)
         end
 
         -- check for new membership into thieves guild
-        if (settings.disable ~= true) and ((quest.stage <= common.questStage.DISABLED) or (quest.started == false)) then
+        if (settings.disable() ~= true) and ((quest.stage <= common.questStage.DISABLED) or (quest.started == false)) then
             -- quest hasn't started. we need to get to first stage so the dialogue topic
             -- is available.
             local thievesRank = types.NPC.getFactionRank(player, "Thieves Guild")
@@ -339,7 +336,7 @@ local function onInfrequentUpdate(dt)
             end
         end
 
-        saveState(player, state)
+        savePlayerState(player, state)
     end
 end
 
@@ -355,6 +352,7 @@ return {
     },
     engineHandlers = {
         onSave = saveState,
-        onLoad = loadState
+        onLoad = loadState,
+        onUpdate = onUpdate,
     }
 }
