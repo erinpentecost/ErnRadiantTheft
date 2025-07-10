@@ -141,7 +141,7 @@ local function setupMacguffinInCell(cell, forbiddenCategory)
         end
     end
     if macguffin == nil then
-        error("failed to find a macguffin")
+        settings.debugPrint("failed to find a macguffin in "..cell.id)
         return nil
     end
 
@@ -302,6 +302,22 @@ local function onQuestUpdate(data)
     end
 end
 
+local restartCallback = async:registerTimerCallback(settings.MOD_NAME .. "_restart_quest_callback", function(data)
+    if data.player == nil then
+        error("no player for quest expiration")
+        return
+    end
+    local quest = types.Player.quests(data.player)[common.questID]
+    if quest.stage == common.questStage.RESTARTING then
+        settings.debugPrint("restarting quest")
+    else
+        error("quest in bad state")
+        return
+    end
+    quest.stage = common.questStage.AVAILABLE - 1
+    quest:addJournalEntry(common.questStage.AVAILABLE, data.player)
+end)
+
 local infrequentMap = infrequent.FunctionCollection:new()
 
 local function onInfrequentUpdate(dt)
@@ -336,6 +352,19 @@ local function onInfrequentUpdate(dt)
                 settings.debugPrint("found the macguffin. " .. tostring(quest.stage))
                 quest.stage = common.questStage.STOLEN_GOOD
             end
+        end
+
+        if quest.stage == common.questStage.COMPLETED or quest.stage == common.questStage.QUIT then
+            quest.stage = common.questStage.RESTARTING
+            local waitTime = 60 * 60
+            if quest.stage == common.questStage.QUIT then
+                waitTime = waitTime * 24 * 3
+            else
+                waitTime = waitTime * 3
+            end
+            async:newGameTimer(waitTime, restartCallback, {
+                player=player,
+            })
         end
 
         savePlayerState(player, state)

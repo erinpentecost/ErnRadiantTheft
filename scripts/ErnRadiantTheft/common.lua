@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     return randList
 end
 
+-- mwscript can only INCREASE the quest stage.
 local questStage = {
     AVAILABLE = 5, -- set during a special greeting
     STARTED = 10, -- player got a heist. this is set through mwscript!
@@ -32,8 +33,9 @@ local questStage = {
     STOLEN_GOOD_LOST = 21, -- no journal entry for this.
     STOLEN_BAD = 30,
     STOLEN_BAD_LOST = 31, -- no journal entry for this.
-    EXPIRED = 40, -- an end state.
-    COMPLETED = 50 -- this is set through mwscript! an end state.
+    QUIT = 40, -- an end state.
+    COMPLETED = 50, -- this is set through mwscript! an end state.
+    RESTARTING = 100,
 }
 
 return {
