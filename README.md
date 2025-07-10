@@ -53,5 +53,5 @@ These are split into categories. We should cycle through each category once befo
 
 # TODO
 
-- Add category for Ayleid stuff from TR.
-- Add bounty hunters. There's a chance to spawn a bounty hunter or investigator in the target cell for a new job. These have an AI of follow the player, and will initiate a conversation like a guard chasing you (or a dreamer). After the conversation, with a Goodbye, they attack. This could set up a new quest line.
+- Add category for gems and limeware (misc_lw_.*)
+- Add bounty hunters. There's a chance to spawn a bounty hunter or investigator in the target cell for a new job. These have an AI of follow the player, and will initiate a conversation like a guard chasing you (or a dreamer). After the conversation, with a Goodbye, they attack. This could set up a new quest line. This could just be a different mod, though. I can spawn an NPC in any city as the player enters it.

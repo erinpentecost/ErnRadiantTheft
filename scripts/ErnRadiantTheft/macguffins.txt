@@ -2,6 +2,8 @@ blackmail, Book, ernradianttheft_incriminatinglet
 forgery, Clothing, ernradianttheft_signetring
 trade_secrets, Book, ernradianttheft_ledger
 dwemer, Armor, dwemer_helm
+dwemer, Armor, dwemer_shield
+dwemer, Weapon, dwarven crossbow
 dwemer, Miscellaneous, misc_dwrv_bowl00
 dwemer, Miscellaneous, misc_dwrv_goblet00
 dwemer, Miscellaneous, misc_dwrv_pitcher00
