@@ -101,7 +101,8 @@ local function randomMacguffinForNPC(npcRecordId, forbiddenCategory)
 end
 
 local function containerHasItem(container, itemRecordId)
-    return types.Container.inventory(container):find(itemRecordId) ~= nil
+    settings.debugPrint("checking if " .. container.recordId .. " has a "..tostring(itemRecordId))
+    return container.type.inventory(container):find(itemRecordId) ~= nil
 end
 
 local function setupMacguffinInCell(cell, forbiddenCategory)
@@ -125,7 +126,7 @@ local function setupMacguffinInCell(cell, forbiddenCategory)
                 settings.debugPrint("Finding a macguffin for " .. container.owner.recordId .. "...")
                 -- a stable container with an owner.
                 macguffin = randomMacguffinForNPC(container.owner.recordId, forbiddenCategory)
-                if macguffin ~= nil and (containerHasItem(container, macguffin.record) == false) then
+                if macguffin ~= nil and (containerHasItem(container, macguffin.record.id) == false) then
                     local ownerRecord = types.NPC.record(container.owner.recordId)
                     if ownerRecord ~= nil then
                         settings.debugPrint("Found a macguffin for " .. container.owner.recordId .. ".")
@@ -238,7 +239,7 @@ local function newJob(player)
         targetContainerId = targetContainer.id,
         category = macguffin.category,
         type = macguffin.type,
-        recordId = macguffin.recordId,
+        recordId = macguffin.record.id,
         itemInstance = macguffinInstance
     }
 
@@ -281,10 +282,10 @@ local function onStolenCallback(stolenItemsData)
         end
         -- we stole the right item.
         if data.caught then
-            settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_good state")
+            settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_bad state")
             types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_BAD, data.player)
         else
-            settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_bad state")
+            settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_good state")
             types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_GOOD, data.player)
         end
     end
@@ -301,43 +302,38 @@ local function onQuestUpdate(data)
     end
 end
 
-local function playerHasItemRecord(player, itemRecord)
-    for _, item in ipairs(types.Actor.inventory(player):getAll()) do
-        -- use recordId instead of instance id to work around stack shenanigans.
-        if item.recordId == itemRecord then
-            return true
-        end
-    end
-    return false
-end
-
 local infrequentMap = infrequent.FunctionCollection:new()
 
 local function onInfrequentUpdate(dt)
     for _, player in ipairs(world.players) do
-        local state = getPlayerState(player)
-
         local quest = types.Player.quests(player)[common.questID]
+        if quest.stage < 1 then
+            settings.debugPrint("quest not started")
+            return
+        end
 
-        settings.debugPrint("checking player " .. aux_util.deepToString(quest, 3))
+        local state = getPlayerState(player)
 
         -- monitor for inventory changes.
         -- use quest stage to bridge into mwscript, since mwscript doesn't
         -- know which item it is looking for.
+        
         local currentJob = state.jobs[1]
+        settings.debugPrint("checking player status. quest: " .. tostring(quest.stage)..". job: "..aux_util.deepToString(currentJob, 4))
+
         if currentJob ~= nil then
-            local hasMacguffin = playerHasItemRecord(player, state.jobs[1].recordId)
+            local hasMacguffin = containerHasItem(player, state.jobs[1].recordId)
             if (quest.stage == common.questStage.STOLEN_BAD) and (hasMacguffin == false) then
-                settings.debugPrint("lost the macguffin")
                 quest.stage = common.questStage.STOLEN_BAD_LOST
+                settings.debugPrint("lost the macguffin. " .. tostring(quest.stage))
             elseif (quest.stage == common.questStage.STOLEN_GOOD) and (hasMacguffin == false) then
-                settings.debugPrint("lost the macguffin")
+                settings.debugPrint("lost the macguffin. " .. tostring(quest.stage))
                 quest.stage = common.questStage.STOLEN_GOOD_LOST
             elseif (quest.stage == common.questStage.STOLEN_BAD_LOST) and (hasMacguffin) then
-                settings.debugPrint("found the macguffin")
+                settings.debugPrint("found the macguffin. " .. tostring(quest.stage))
                 quest.stage = common.questStage.STOLEN_BAD
             elseif (quest.stage == common.questStage.STOLEN_GOOD_LOST) and (hasMacguffin) then
-                settings.debugPrint("found the macguffin")
+                settings.debugPrint("found the macguffin. " .. tostring(quest.stage))
                 quest.stage = common.questStage.STOLEN_GOOD
             end
         end

@@ -63,16 +63,19 @@ local function filter(macguffin, npcRecord)
         service = macguffin.type
     end
     if npcRecord.servicesOffered[service] then
+        settings.debugPrint("not valid; would sell the macguffin")
         return false
     end
 
     -- don't pick respawning npcs.
     if npcRecord.isRespawning then
+        settings.debugPrint("not valid; respawns")
         return false
     end
 
     -- guards have bad names.
     if string.lower(npcRecord.class) == "guard" then
+        settings.debugPrint("not valid; is a guard")
         return false
     end
 
@@ -83,10 +86,12 @@ local function filter(macguffin, npcRecord)
     for _, factionId in pairs(types.NPC.getFactions(inst)) do
         if factionId == "Thieves Guild" then
             inThievesGuild = true
+            break
         end
     end
     inst:remove()
     if inThievesGuild then
+        settings.debugPrint("not valid; in thieves guild")
         return false
     end
 
