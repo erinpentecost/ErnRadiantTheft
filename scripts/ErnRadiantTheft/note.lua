@@ -22,7 +22,7 @@ local core = require("openmw.core")
 local localization = core.l10n(settings.MOD_NAME)
 local world = require('openmw.world')
 
-local function giveNote(player, category, itemRecord, npcRecord, cell)
+local function giveNote(player, number, category, itemRecord, npcRecord, cell)
     local cellName = cell.name
     if cellName == "" or cellName == nil then
         cellName = cell.region
@@ -34,7 +34,7 @@ local function giveNote(player, category, itemRecord, npcRecord, cell)
         icon = "icons\\m\\tx_parchment_02.dds",
         isScroll = true,
         model = "meshes\\m\\text_parchment_02.nif",
-        name = localization("heist_"..category.."_name"),
+        name = localization("heist_"..category.."_name", {number=number}),
         skill = nil,
         text = localization("heist_"..category.."_body", {item=itemRecord.name, npc=npcRecord.name, location=cellName}),
     }

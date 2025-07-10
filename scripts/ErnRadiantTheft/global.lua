@@ -251,7 +251,7 @@ local function newJob(player)
     table.insert(state.jobs, 1, job)
     savePlayerState(player, state)
 
-    note.giveNote(player, job.category, macguffin.record, mark, parentCell)
+    note.giveNote(player, #state.jobs, job.category, macguffin.record, mark, parentCell)
 end
 
 local function onStolenCallback(stolenItemsData)
