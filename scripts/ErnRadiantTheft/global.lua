@@ -100,6 +100,10 @@ local function randomMacguffinForNPC(npcRecordId, forbiddenCategory)
     return nil
 end
 
+local function containerHasItem(container, itemRecordId)
+    return types.Container.inventory(container):find(itemRecordId) ~= nil
+end
+
 local function setupMacguffinInCell(cell, forbiddenCategory)
     if cell == nil then
         error("failed to find cell")
@@ -121,10 +125,10 @@ local function setupMacguffinInCell(cell, forbiddenCategory)
                 settings.debugPrint("Finding a macguffin for " .. container.owner.recordId .. "...")
                 -- a stable container with an owner.
                 macguffin = randomMacguffinForNPC(container.owner.recordId, forbiddenCategory)
-                if macguffin ~= nil then
+                if macguffin ~= nil and (containerHasItem(container, macguffin.record) == false) then
                     local ownerRecord = types.NPC.record(container.owner.recordId)
                     if ownerRecord ~= nil then
-                        settings.debugPrint("Found a macguffin for "..container.owner.recordId..".")
+                        settings.debugPrint("Found a macguffin for " .. container.owner.recordId .. ".")
                         mark = ownerRecord
                         targetContainer = container
                         break
@@ -249,34 +253,40 @@ local function newJob(player)
     note.giveNote(player, job.category, macguffin.record, mark, parentCell)
 end
 
-local function onStolenCallback(data)
-    -- called when we steal an item.
-    -- used to confirm that we stole the macguffin.
-    -- the `caught` field will be used to determine if we get the full reward or not.
-    -- used to confirm that the player didn't cheat by getting the item 
-    -- from somewhere else.
-    settings.debugPrint("stole " .. data.itemRecord.id .. " from " .. data.owner.recordId)
+local function onStolenCallback(stolenItemsData)
+    settings.debugPrint("onStolenCallback(" .. aux_util.deepToString(stolenItemsData, 4) .. ")")
 
-    local state = getPlayerState(data.player)
+    for _, data in ipairs(stolenItemsData) do
+        -- called when we steal an item.
+        -- used to confirm that we stole the macguffin.
+        -- the `caught` field will be used to determine if we get the full reward or not.
+        -- used to confirm that the player didn't cheat by getting the item 
+        -- from somewhere else.
+        --settings.debugPrint("stole " .. tostring(data.itemRecord.id) .. " from " .. tostring(data.owner.recordId))
 
-    local currentJob = state.jobs[1]
-    if (currentJob == nil) or (currentJob.itemInstance.id ~= data.itemInstance) then
-        return
-    end
-    local quest = types.Player.quests(data.player)[common.questID]
-    if quest.stage ~= common.questStage.STARTED then
-        -- this can happen if the player places the quest item in an owned container
-        -- and pulls it back out again.
-        settings.debugPrint("quest state is bad for job " .. currentJob.jobID .. ": " .. tostring(quest.stage))
-        return
-    end
-    -- we stole the right item.
-    if data.caught then
-        settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_good state")
-        types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_BAD, data.player)
-    else
-        settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_bad state")
-        types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_GOOD, data.player)
+        local state = getPlayerState(data.player)
+
+        local currentJob = state.jobs[1]
+        --settings.debugPrint("job: " .. aux_util.deepToString(currentJob, 4))
+        if (currentJob == nil) or (currentJob.itemInstance.id ~= data.itemInstance.id) then
+            return
+        end
+        settings.debugPrint("stole a macguffin")
+        local quest = types.Player.quests(data.player)[common.questID]
+        if quest.stage ~= common.questStage.STARTED then
+            -- this can happen if the player places the quest item in an owned container
+            -- and pulls it back out again.
+            settings.debugPrint("quest state is bad for job " .. currentJob.jobID .. ": " .. tostring(quest.stage))
+            return
+        end
+        -- we stole the right item.
+        if data.caught then
+            settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_good state")
+            types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_BAD, data.player)
+        else
+            settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_bad state")
+            types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_GOOD, data.player)
+        end
     end
 end
 
@@ -318,12 +328,16 @@ local function onInfrequentUpdate(dt)
         if currentJob ~= nil then
             local hasMacguffin = playerHasItemRecord(player, state.jobs[1].recordId)
             if (quest.stage == common.questStage.STOLEN_BAD) and (hasMacguffin == false) then
+                settings.debugPrint("lost the macguffin")
                 quest.stage = common.questStage.STOLEN_BAD_LOST
             elseif (quest.stage == common.questStage.STOLEN_GOOD) and (hasMacguffin == false) then
+                settings.debugPrint("lost the macguffin")
                 quest.stage = common.questStage.STOLEN_GOOD_LOST
             elseif (quest.stage == common.questStage.STOLEN_BAD_LOST) and (hasMacguffin) then
+                settings.debugPrint("found the macguffin")
                 quest.stage = common.questStage.STOLEN_BAD
             elseif (quest.stage == common.questStage.STOLEN_GOOD_LOST) and (hasMacguffin) then
+                settings.debugPrint("found the macguffin")
                 quest.stage = common.questStage.STOLEN_GOOD
             end
         end
