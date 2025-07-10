@@ -106,8 +106,6 @@ end
 
 local function loadMacguffins()
     -- read allow list.
-    -- this can contain cells that don't exist.
-    -- this can consist of cell names or cell ids.
     local handle = nil
     local err = nil
     handle, err = vfs.open("scripts\\"..settings.MOD_NAME.."\\macguffins.txt")
@@ -133,7 +131,7 @@ local function loadMacguffins()
             
             local record = getRecord(split[2], split[3])
             if record == nil then
-                error("couldn't find record for line: "..line)
+                settings.debugPrint("couldn't find record for line: "..line)
             else
                 table.insert(macguffins, {
                     category = string.lower(split[1]),
