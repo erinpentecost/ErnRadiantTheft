@@ -51,11 +51,7 @@ These are split into categories. We should cycle through each category once befo
 - `bk_corpsepreperation2_c` Corpse Preparation v II (book)
 - `bk_corpsepreperation3_c` Corpse Preparation v II (book)
 
+# TODO
 
-## The Notes
-
-When we make a note, it contains this info:
-
-- The NPC owner record name.
-- Not the actual name of the interior cell, but the name of the cell that a door in the interior points to. This makes it more of a scavenger hunt, since it ends up being the city name. The names of interior cells also don't always follow natural language rules.
-
+- Add category for Ayleid stuff from TR.
+- Add bounty hunters. There's a chance to spawn a bounty hunter or investigator in the target cell for a new job. These have an AI of follow the player, and will initiate a conversation like a guard chasing you (or a dreamer). After the conversation, with a Goodbye, they attack. This could set up a new quest line.
