@@ -7,9 +7,6 @@ modSettingsDesc: "Change how the mod works."
 modSettingsGameplayTitle: "Gameplay Options"
 modSettingsGameplayDesc: "Change how gameplay mechanics work."
 
-disable_name: "Disable"
-disable_description: "Reset quest status and prevent the quest from starting. This can be used if you get an issue with conflicting a 'heist' conversation topic."
-
 debugMode_name: "Debug Mode"
 debugMode_description: "Print debug messages."
 

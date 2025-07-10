@@ -26,10 +26,6 @@ local function debugMode()
     return SettingsGameplay:get("debugMode")
 end
 
-local function disable()
-    return SettingsGameplay:get("disable")
-end
-
 local function debugPrint(str, ...)
     if debugMode() then
         local arg = {...}
@@ -59,12 +55,6 @@ local function initSettings()
         page = MOD_NAME,
         permanentStorage = false,
         settings = {{
-            key = "disable",
-            name = "disable_name",
-            description = "disable_description",
-            default = false,
-            renderer = "checkbox"
-        },{
             key = "debugMode",
             name = "debugMode_name",
             description = "debugMode_description",
@@ -82,8 +72,6 @@ return {
     MOD_NAME = MOD_NAME,
 
     registerPage = registerPage,
-
-    disable = disable,
     
     debugMode = debugMode,
     debugPrint = debugPrint

@@ -41,7 +41,7 @@ local persistedState = {
     -- players is a map of player-specific state to track.
     -- the index is the player id.
     players = {}
-        }
+}
 
 local function saveState()
     return persistedState
@@ -109,21 +109,27 @@ local function setupMacguffinInCell(cell, forbiddenCategory)
     -- now we have to load the cell so we can get all the doors.
     -- pick a suitable interior cell.
     -- there should be owned containers in it.
+    local bannedNPCs = {}
     local targetContainer = nil
     local macguffin = nil
     local mark = nil
     for _, container in ipairs(common.shuffle(cell:getAll(types.Container))) do
         if (container.owner ~= nil) and (container.owner.recordId ~= nil) then
             local containerRecord = types.Container.record(container)
-            if (containerRecord.isOrganic == false) and (containerRecord.isRespawning == false) then
+            if (containerRecord.isOrganic == false) and (containerRecord.isRespawning == false) and
+                (bannedNPCs[container.owner.recordId] ~= true) then
+                settings.debugPrint("Finding a macguffin for " .. container.owner.recordId .. "...")
                 -- a stable container with an owner.
                 macguffin = randomMacguffinForNPC(container.owner.recordId, forbiddenCategory)
                 if macguffin ~= nil then
                     local ownerRecord = types.NPC.record(container.owner.recordId)
                     if ownerRecord ~= nil then
+                        settings.debugPrint("Found a macguffin for "..container.owner.recordId..".")
                         mark = ownerRecord
                         targetContainer = container
                         break
+                    else
+                        bannedNPCs[container.owner.recordId] = true
                     end
                 end
             end
@@ -142,6 +148,7 @@ local function setupMacguffinInCell(cell, forbiddenCategory)
 end
 
 local function setupMacguffinInCells(parentCell, forbiddenCategory)
+    settings.debugPrint("Building a job somewhere in " .. parentCell.name .. "...")
     -- recurse down to depth of 3.
     -- add all cells to a list
     -- randomly select from list.
@@ -158,8 +165,10 @@ local function setupMacguffinInCells(parentCell, forbiddenCategory)
     end
 
     for _, cell in ipairs(common.shuffle(cells)) do
+        settings.debugPrint("Building a job in " .. cell.name .. "...")
         local setup = setupMacguffinInCell(cell, forbiddenCategory)
         if setup ~= nil then
+            settings.debugPrint("Built a job in " .. cell.name .. "!")
             return setup
         end
     end
@@ -179,33 +188,37 @@ local function newJob(player)
     -- make sure we don't get duplicates back-to-back.
     local previousJob = state.jobs[1]
 
+    local forbiddenCategory = nil
+    if previousJob ~= nil then
+        forbiddenCategory = previousJob.category
+    end
+
     -- determine parent cell.
     local parentCell = nil
+    local setup = nil
     for _, cell in ipairs(common.shuffle(cells.allowedCells)) do
         if (previousJob ~= nil) and (previousJob.extCellID == cell.id) then
             settings.debugPrint("Skipping repeated cell " .. cell.id)
         else
+            -- this is a potentially valid cell.
             parentCell = cell
-            break
+
+            setup = setupMacguffinInCells(parentCell, forbiddenCategory)
+            if setup ~= nil then
+                -- success
+                break
+            end
         end
     end
     if parentCell == nil then
         error("failed to find a parent cell")
         return
     end
-
-    -- now we have to load the cell so we can get all the doors.
-    -- pick a suitable interior cell.
-    -- there should be owned containers in it.
-    local forbiddenCategory = nil
-    if previousJob ~= nil then
-        forbiddenCategory = previousJob.category
-    end
-    local setup = setupMacguffinInCells(parentCell, forbiddenCategory)
     if setup == nil then
-        error("failed to setup macguffin")
+        error("failed to setup job")
         return
     end
+
     local targetContainer = setup.targetContainer
     local macguffin = setup.macguffin
     local mark = setup.mark
@@ -270,10 +283,6 @@ end
 interfaces.ErnBurglary.onStolenCallback(onStolenCallback)
 
 local function onQuestUpdate(data)
-    if settings.disable() then
-        settings.debugPrint("disabled")
-        return
-    end
     if data.stage == common.questStage.STARTED then
         settings.debugPrint("initializing new job")
         -- start up the new job.
@@ -300,13 +309,7 @@ local function onInfrequentUpdate(dt)
 
         local quest = types.Player.quests(player)[common.questID]
 
-        settings.debugPrint("checking player "..aux_util.deepToString(quest, 3))
-
-        if (settings.disable()) and (quest.stage ~= common.questStage.DISABLED) then
-            print("Disabling quest.")
-            quest.stage = common.questStage.DISABLED
-            return
-        end
+        settings.debugPrint("checking player " .. aux_util.deepToString(quest, 3))
 
         -- monitor for inventory changes.
         -- use quest stage to bridge into mwscript, since mwscript doesn't
@@ -322,17 +325,6 @@ local function onInfrequentUpdate(dt)
                 quest.stage = common.questStage.STOLEN_BAD
             elseif (quest.stage == common.questStage.STOLEN_GOOD_LOST) and (hasMacguffin) then
                 quest.stage = common.questStage.STOLEN_GOOD
-            end
-        end
-
-        -- check for new membership into thieves guild
-        if (settings.disable() ~= true) and ((quest.stage <= common.questStage.DISABLED) or (quest.started == false)) then
-            -- quest hasn't started. we need to get to first stage so the dialogue topic
-            -- is available.
-            local thievesRank = types.NPC.getFactionRank(player, "Thieves Guild")
-            if thievesRank > 0 then
-                print("Enabling quest.")
-                quest:addJournalEntry(common.questStage.AVAILABLE, player)
             end
         end
 
@@ -353,6 +345,6 @@ return {
     engineHandlers = {
         onSave = saveState,
         onLoad = loadState,
-        onUpdate = onUpdate,
+        onUpdate = onUpdate
     }
 }

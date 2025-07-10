@@ -71,10 +71,15 @@ local function filter(macguffin, npcRecord)
         return false
     end
 
+    -- guards have bad names.
+    if string.lower(npcRecord.class) == "guard" then
+        return false
+    end
+
     -- don't pick NPCs that are in the guild.
     -- this is funky because we need to find or create the npc to figure that out.
     local inThievesGuild = false
-    local inst = world.createObject(npcRecord, 1)
+    local inst = world.createObject(npcRecord.id, 1)
     for _, factionId in pairs(types.NPC.getFactions(inst)) do
         if factionId == "Thieves Guild" then
             inThievesGuild = true
