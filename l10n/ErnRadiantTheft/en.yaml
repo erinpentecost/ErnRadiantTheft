@@ -10,6 +10,8 @@ modSettingsGameplayDesc: "Change how gameplay mechanics work."
 debugMode_name: "Debug Mode"
 debugMode_description: "Print debug messages."
 
+questAvailable: "A new heist is available."
+
 heist_blackmail_name: "Heist #{number}: Blackmail"
 heist_blackmail_body: | 
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
