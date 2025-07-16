@@ -18,6 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 local common = require("scripts.ErnRadiantTheft.common")
 local core = require("openmw.core")
 local self = require("openmw.self")
+local localization = core.l10n(settings.MOD_NAME)
+local ui = require('openmw.ui')
 
 settings.registerPage()
 
@@ -31,8 +33,17 @@ local function onQuestUpdate(questId, stage)
     end
 end
 
+
+local function onQuestAvailable(data)
+    settings.debugPrint("onQuestAvailable")
+
+    ui.showMessage(localization("questAvailable", {}))
+end
+
 return {
-    eventHandlers = {},
+    eventHandlers = {
+        [settings.MOD_NAME .. 'onQuestAvailable'] = onQuestAvailable
+    },
     engineHandlers = {
         onQuestUpdate = onQuestUpdate
     }

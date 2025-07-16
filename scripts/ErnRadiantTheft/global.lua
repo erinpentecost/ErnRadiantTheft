@@ -101,7 +101,7 @@ local function randomMacguffinForNPC(npcRecordId, forbiddenCategory)
 end
 
 local function containerHasItem(container, itemRecordId)
-    settings.debugPrint("checking if " .. container.recordId .. " has a "..tostring(itemRecordId))
+    settings.debugPrint("checking if " .. container.recordId .. " has a " .. tostring(itemRecordId))
     return container.type.inventory(container):find(itemRecordId) ~= nil
 end
 
@@ -141,7 +141,7 @@ local function setupMacguffinInCell(cell, forbiddenCategory)
         end
     end
     if macguffin == nil then
-        settings.debugPrint("failed to find a macguffin in "..cell.id)
+        settings.debugPrint("failed to find a macguffin in " .. cell.id)
         return nil
     end
 
@@ -263,12 +263,12 @@ local function onStolenCallback(stolenItemsData)
         -- the `caught` field will be used to determine if we get the full reward or not.
         -- used to confirm that the player didn't cheat by getting the item 
         -- from somewhere else.
-        --settings.debugPrint("stole " .. tostring(data.itemRecord.id) .. " from " .. tostring(data.owner.recordId))
+        -- settings.debugPrint("stole " .. tostring(data.itemRecord.id) .. " from " .. tostring(data.owner.recordId))
 
         local state = getPlayerState(data.player)
 
         local currentJob = state.jobs[1]
-        --settings.debugPrint("job: " .. aux_util.deepToString(currentJob, 4))
+        -- settings.debugPrint("job: " .. aux_util.deepToString(currentJob, 4))
         if (currentJob == nil) or (currentJob.itemInstance.id ~= data.itemInstance.id) then
             return
         end
@@ -293,15 +293,6 @@ end
 
 interfaces.ErnBurglary.onStolenCallback(onStolenCallback)
 
-local function onQuestUpdate(data)
-    if data.stage == common.questStage.STARTED then
-        settings.debugPrint("initializing new job")
-        -- start up the new job.
-        -- this will modify state, so we should exit after this.
-        newJob(data.player)
-    end
-end
-
 local restartCallback = async:registerTimerCallback(settings.MOD_NAME .. "_restart_quest_callback", function(data)
     if data.player == nil then
         error("no player for quest expiration")
@@ -314,67 +305,82 @@ local restartCallback = async:registerTimerCallback(settings.MOD_NAME .. "_resta
         error("quest in bad state")
         return
     end
+    -- try to reset journal since engine only accepts increasing numbers
+    -- when modifying journal. these don't work.
+    quest.finished = false
     quest.stage = common.questStage.AVAILABLE - 1
     quest:addJournalEntry(common.questStage.AVAILABLE, data.player)
+    data.player:sendEvent(settings.MOD_NAME .. 'onQuestAvailable', data)
 end)
 
-local infrequentMap = infrequent.FunctionCollection:new()
-
-local function onInfrequentUpdate(dt)
-    for _, player in ipairs(world.players) do
-        local quest = types.Player.quests(player)[common.questID]
-        if quest.stage < 1 then
-            settings.debugPrint("quest not started")
-            return
+local function onQuestUpdate(data)
+    local quest = types.Player.quests(data.player)[common.questID]
+    if data.stage == common.questStage.STARTED then
+        settings.debugPrint("initializing new job")
+        -- start up the new job.
+        -- this will modify state, so we should exit after this.
+        newJob(data.player)
+    elseif quest.stage == common.questStage.COMPLETED or quest.stage == common.questStage.QUIT then
+        -- RESTARTING exists so we don't double-spawn the restartCallback.
+        settings.debugPrint("setting up timer for job restart")
+        quest.stage = common.questStage.RESTARTING
+        local waitTime = 60 * 60
+        if quest.stage == common.questStage.QUIT then
+            waitTime = waitTime * 24 * 3
+        else
+            waitTime = waitTime * 3
         end
 
-        local state = getPlayerState(player)
+        quest.finished = true
 
-        -- monitor for inventory changes.
-        -- use quest stage to bridge into mwscript, since mwscript doesn't
-        -- know which item it is looking for.
-        
-        local currentJob = state.jobs[1]
-        settings.debugPrint("checking player status. quest: " .. tostring(quest.stage)..". job: "..aux_util.deepToString(currentJob, 4))
-
-        if currentJob ~= nil then
-            local hasMacguffin = containerHasItem(player, state.jobs[1].recordId)
-            if (quest.stage == common.questStage.STOLEN_BAD) and (hasMacguffin == false) then
-                quest.stage = common.questStage.STOLEN_BAD_LOST
-                settings.debugPrint("lost the macguffin. " .. tostring(quest.stage))
-            elseif (quest.stage == common.questStage.STOLEN_GOOD) and (hasMacguffin == false) then
-                settings.debugPrint("lost the macguffin. " .. tostring(quest.stage))
-                quest.stage = common.questStage.STOLEN_GOOD_LOST
-            elseif (quest.stage == common.questStage.STOLEN_BAD_LOST) and (hasMacguffin) then
-                settings.debugPrint("found the macguffin. " .. tostring(quest.stage))
-                quest.stage = common.questStage.STOLEN_BAD
-            elseif (quest.stage == common.questStage.STOLEN_GOOD_LOST) and (hasMacguffin) then
-                settings.debugPrint("found the macguffin. " .. tostring(quest.stage))
-                quest.stage = common.questStage.STOLEN_GOOD
-            end
-        end
-
-        if quest.stage == common.questStage.COMPLETED or quest.stage == common.questStage.QUIT then
-            quest.stage = common.questStage.RESTARTING
-            local waitTime = 60 * 60
-            if quest.stage == common.questStage.QUIT then
-                waitTime = waitTime * 24 * 3
-            else
-                waitTime = waitTime * 3
-            end
-            async:newGameTimer(waitTime, restartCallback, {
-                player=player,
-            })
-        end
-
-        savePlayerState(player, state)
+        async:newGameTimer(waitTime, restartCallback, {
+            player = data.player
+        })
     end
 end
 
-infrequentMap:addCallback("onInfrequentUpdate", 1.0, onInfrequentUpdate)
+local function syncPlayer(player)
+    local quest = types.Player.quests(player)[common.questID]
+    if quest.stage < 1 then
+        settings.debugPrint("quest not started")
+        return
+    end
 
-local function onUpdate(dt)
-    infrequentMap:onUpdate(dt)
+    local state = getPlayerState(player)
+
+    -- monitor for inventory changes.
+    -- use quest stage to bridge into mwscript, since mwscript doesn't
+    -- know which item it is looking for.
+
+    local currentJob = state.jobs[1]
+    settings.debugPrint("checking player status. quest: " .. tostring(quest.stage) .. ". job: " ..
+                            aux_util.deepToString(currentJob, 4))
+
+    if currentJob ~= nil then
+        local hasMacguffin = containerHasItem(player, state.jobs[1].recordId)
+        if (quest.stage == common.questStage.STOLEN_BAD) and (hasMacguffin == false) then
+            quest.stage = common.questStage.STOLEN_BAD_LOST
+            settings.debugPrint("lost the macguffin. " .. tostring(quest.stage))
+        elseif (quest.stage == common.questStage.STOLEN_GOOD) and (hasMacguffin == false) then
+            settings.debugPrint("lost the macguffin. " .. tostring(quest.stage))
+            quest.stage = common.questStage.STOLEN_GOOD_LOST
+        elseif (quest.stage == common.questStage.STOLEN_BAD_LOST) and (hasMacguffin) then
+            settings.debugPrint("found the macguffin. " .. tostring(quest.stage))
+            quest.stage = common.questStage.STOLEN_BAD
+        elseif (quest.stage == common.questStage.STOLEN_GOOD_LOST) and (hasMacguffin) then
+            settings.debugPrint("found the macguffin. " .. tostring(quest.stage))
+            quest.stage = common.questStage.STOLEN_GOOD
+        end
+    end
+
+    savePlayerState(player, state)
+end
+
+local function onActivate(object, actor)
+    -- this is called before dialogue begins with an NPC.
+    if types.NPC.objectIsInstance(object) then
+        syncPlayer(actor)
+    end
 end
 
 return {
@@ -384,6 +390,6 @@ return {
     engineHandlers = {
         onSave = saveState,
         onLoad = loadState,
-        onUpdate = onUpdate
+        onActivate = onActivate
     }
 }
