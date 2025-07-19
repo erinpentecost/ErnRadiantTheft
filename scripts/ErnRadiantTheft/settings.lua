@@ -55,6 +55,17 @@ local function initSettings()
         page = MOD_NAME,
         permanentStorage = false,
         settings = {{
+            key = "maxDistance",
+            name = "maxDistance_name",
+            description = "maxDistance_description",
+            default = 30,
+            renderer = "number",
+            argument = {
+                integer = false,
+                min = 3,
+                max = 1000
+            }
+        },{
             key = "debugMode",
             name = "debugMode_name",
             description = "debugMode_description",

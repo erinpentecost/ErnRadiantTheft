@@ -75,13 +75,13 @@ local function filter(macguffin, npcRecord)
 
     -- don't pick respawning npcs.
     if npcRecord.isRespawning then
-        settings.debugPrint("not valid; respawns")
+        --settings.debugPrint("not valid; respawns")
         return false
     end
 
     -- guards have bad names.
     if string.lower(npcRecord.class) == "guard" then
-        settings.debugPrint("not valid; is a guard")
+        --settings.debugPrint("not valid; is a guard")
         return false
     end
 

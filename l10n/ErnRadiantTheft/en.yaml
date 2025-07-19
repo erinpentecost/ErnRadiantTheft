@@ -7,6 +7,9 @@ modSettingsDesc: "Change how the mod works."
 modSettingsGameplayTitle: "Gameplay Options"
 modSettingsGameplayDesc: "Change how gameplay mechanics work."
 
+maxDistance_name: "Max Cell Distance"
+maxDistance_description: "Maximum distance from current cell to heist cell."
+
 debugMode_name: "Debug Mode"
 debugMode_description: "Print debug messages."
 

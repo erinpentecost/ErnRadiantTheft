@@ -25,6 +25,7 @@ local async = require('openmw.async')
 local world = require('openmw.world')
 local types = require("openmw.types")
 local core = require("openmw.core")
+local util = require('openmw.util')
 local aux_util = require('openmw_aux.util')
 local storage = require('openmw.storage')
 
@@ -68,6 +69,34 @@ end
 
 local function savePlayerState(player, state)
     persistedState.players[player.id] = state
+end
+
+local function getExteriorCell(cell)
+    if cell.isExterior or cell:hasTag("QuasiExterior") then
+        return cell
+    end
+    for _, door in ipairs(common.shuffle(cell:getAll(types.Door))) do
+        local destCell = types.Door.destCell(door)
+        if (destCell ~= nil) and (destCell.isExterior or destCell:hasTag("QuasiExterior")) then
+            return destCell
+        end
+    end
+    return nil
+end
+
+local function getXY(cell)
+    local _,_, x, y = string.find(cell.id, "Esm3ExteriorCell:([-0-9]+):([-0-9]+)")
+    return util.vector2(tonumber(x), tonumber(y))
+end
+
+local function getDistance(cellA, cellB)
+    if cellA.worldSpaceId ~= cellB.worldSpaceId then
+        settings.debugPrint("different worldspaces for "..cellA.name .." and "..cellB.name)
+        return 100000
+    end
+    local dist = (getXY(cellA) - getXY(cellB)):length()
+    settings.debugPrint("distance from "..cellA.name .." to "..cellB.name .. ": "..tostring(dist))
+    return dist
 end
 
 local function getDoors(cell)
@@ -198,12 +227,15 @@ local function newJob(player)
         forbiddenCategory = previousJob.category
     end
 
+    local myCell = getExteriorCell(player.cell)
+    local maxDistance = 10
+
     -- determine parent cell.
     local parentCell = nil
     local setup = nil
     for _, cell in ipairs(common.shuffle(cells.allowedCells)) do
-        if (previousJob ~= nil) and (previousJob.extCellID == cell.id) then
-            settings.debugPrint("Skipping repeated cell " .. cell.id)
+        if getDistance(myCell, cell) > maxDistance then
+            settings.debugPrint("Skipping distant cell " .. cell.id)
         else
             -- this is a potentially valid cell.
             parentCell = cell
@@ -244,7 +276,6 @@ local function newJob(player)
     }
 
     -- place the macguffin
-    macguffinInstance:addScript("scripts\\" .. settings.MOD_NAME .. "\\item.lua", job)
     macguffinInstance:moveInto(targetContainer)
 
     -- update current job
