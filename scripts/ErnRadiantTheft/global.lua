@@ -232,13 +232,12 @@ local function newJob(player)
     end
 
     local myCell = getExteriorCell(player.cell)
-    local maxDistance = 10
 
     -- determine parent cell.
     local parentCell = nil
     local setup = nil
     for _, cell in ipairs(common.shuffle(cells.allowedCells)) do
-        if getDistance(myCell, cell) > maxDistance then
+        if getDistance(myCell, cell) > settings.maxDistance() then
             settings.debugPrint("Skipping distant cell " .. cell.id)
         else
             -- this is a potentially valid cell.

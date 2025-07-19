@@ -1,57 +1,17 @@
 # ErnRadiantTheft
+
 Unlimited heists from the Thieves Guild.
 
+There are unlimited marks to fleece out there in Tamriel. Talk to any Mastermind in the Thieves Guild after getting to Wet Ear rank, and you'll be able to take on heists. Heists will take you all across Tamriel (compatible with all landmass mods) as you attempt to steal valuable artifacts, incriminating letters, skooma, and more. Get the goods without being detected to get a hefty payout when you return to any Mastermind with your loot.
 
-## Quest Layout
+## Installing
 
-The `ernradianttheft_quest` journal controls the quest status.
-- 5: Run once, when the character is rank 1 or higher in the Thieves Guild. This makes sure they have access to the *tip* topic.
-- 10: Quest started through dialogue. Give the player a note. This sets persistent state so we'll create the item when the target cell is loaded.
-- 20: The item was stolen and the player wasn't caught. Set through script.
-- 21: 20 moves to 21 if the player loses the MacGuffin. It moves back to 20 when they pick it up.
-- 30: The item was stolen and the player was caught. Set through script.
-- 31: 30 moves to 31 if the player loses the MacGuffin. It moves back to 30 when they pick it up.
-- 40: The quest expired. Set through script. This exists so jobs can be cycled if they can't be completed.
-- 50: Quest completed, goods returned.
+Download the [latest version here](https://github.com/erinpentecost/ErnRadiantTheft/archive/refs/heads/main.zip).
 
-One of the issues here is that the MacGuffin might not actually be in the player's inventory when they return it. Set a script on the MacGuffin so if it's inactivated I set the quest to expired (if current status is 20 or 30)?
+Extract to your `mods/` folder. In your `openmw.cfg` file, add these lines in the correct spots (AFTER *ErnBurglary* files):
 
-I'll have to delete the MacGuffin once the quest status hits 40 or 50 via a script.
-
-I'll have to spawn the Note when quest status hits 10.
-
-I'll have to spawn the MacGuffin when the target cell is entered. This can be done by placing the item in an owned container or doing interesting things with chained race traces.
-
-Placing the MacGuffin on NPCs who sell items of that type should be avoided, or the player can just buy the thing. This will bypass the OnTheft handler.
-
-## MacGuffins
-
-These are split into categories. We should cycle through each category once before repeating them. Only one item in a category should be picked to mark that category as completed. The actual item selected shoudn't match anything that the owner sells.
-
-### Blackmail
-- `ernradianttheft_incriminatinglet` (book)
-
-### Forgery
-- `ernradianttheft_signetring` (clothing)
-
-### Trade Secrets
-- `ernradianttheft_ledger` (book)
-
-### Illicit Dwemer Artifacts
-- `dwemer_helm` (armor)
-- `misc_dwrv_bowl00` Ornate Dwemer Bowl (misc)
-- `misc_dwrv_artifact60` Dwemer Tube (misc)
-
-### Skooma
-- `ingred_moon_sugar_01` Moon Sugar (ingredient)
-- `potion_skooma_01` Skooma (potion)
-
-### Evidence of Necromancy
-- `bk_corpsepreperation1_c` Corpse Preparation v I (book)
-- `bk_corpsepreperation2_c` Corpse Preparation v II (book)
-- `bk_corpsepreperation3_c` Corpse Preparation v II (book)
-
-# TODO
-
-- Add category for gems and limeware (misc_lw_.*)
-- Add bounty hunters. There's a chance to spawn a bounty hunter or investigator in the target cell for a new job. These have an AI of follow the player, and will initiate a conversation like a guard chasing you (or a dreamer). After the conversation, with a Goodbye, they attack. This could set up a new quest line. This could just be a different mod, though. I can spawn an NPC in any city as the player enters it.
+```ini
+data="/wherevermymodsare/mods/ErnRadiantTheft-main"
+content=ErnRadiantTheft.omwaddon
+content=ErnRadiantTheft.omwscripts
+```

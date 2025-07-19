@@ -37,6 +37,10 @@ local function debugPrint(str, ...)
     end
 end
 
+local function maxDistance()
+    return SettingsGameplay:get("maxDistance")
+end
+
 local function registerPage()
     interfaces.Settings.registerPage {
         key = MOD_NAME,
@@ -83,6 +87,8 @@ return {
     MOD_NAME = MOD_NAME,
 
     registerPage = registerPage,
+
+    maxDistance = maxDistance,
     
     debugMode = debugMode,
     debugPrint = debugPrint
