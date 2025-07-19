@@ -85,17 +85,21 @@ local function getExteriorCell(cell)
 end
 
 local function getXY(cell)
-    local _,_, x, y = string.find(cell.id, "Esm3ExteriorCell:([-0-9]+):([-0-9]+)")
+    local _, _, x, y = string.find(cell.id, "Esm3ExteriorCell:([-0-9]+):([-0-9]+)")
     return util.vector2(tonumber(x), tonumber(y))
 end
 
 local function getDistance(cellA, cellB)
+    if cellA == nil or cellB == nil then
+        settings.debugPrint("couldn't find cell")
+        return 1
+    end
     if cellA.worldSpaceId ~= cellB.worldSpaceId then
-        settings.debugPrint("different worldspaces for "..cellA.name .." and "..cellB.name)
+        settings.debugPrint("different worldspaces for " .. cellA.name .. " and " .. cellB.name)
         return 100000
     end
     local dist = (getXY(cellA) - getXY(cellB)):length()
-    settings.debugPrint("distance from "..cellA.name .." to "..cellB.name .. ": "..tostring(dist))
+    settings.debugPrint("distance from " .. cellA.name .. " to " .. cellB.name .. ": " .. tostring(dist))
     return dist
 end
 

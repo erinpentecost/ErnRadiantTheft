@@ -58,7 +58,7 @@ local function initSettings()
             key = "maxDistance",
             name = "maxDistance_name",
             description = "maxDistance_description",
-            default = 30,
+            default = 20,
             renderer = "number",
             argument = {
                 integer = false,
