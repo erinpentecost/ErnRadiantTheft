@@ -355,6 +355,15 @@ local function onQuestUpdate(data)
         -- this will modify state, so we should exit after this.
         newJob(data.player)
     elseif quest.stage == common.questStage.COMPLETED or quest.stage == common.questStage.QUIT then
+        if quest.stage == common.questStage.COMPLETED then
+            -- delete the macguffin!
+            local state = getPlayerState(data.player)
+            local previousJob = state.jobs[1]
+            local inst = data.player.type.inventory(data.player):find(previousJob.recordId)
+            settings.debugPrint("removing a "..previousJob.recordId)
+            inst:remove(1)
+        end
+
         -- RESTARTING exists so we don't double-spawn the restartCallback.
         settings.debugPrint("setting up timer for job restart")
         quest.stage = common.questStage.RESTARTING
