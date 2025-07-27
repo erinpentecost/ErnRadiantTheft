@@ -16,7 +16,15 @@ content=ErnRadiantTheft.omwaddon
 content=ErnRadiantTheft.omwscripts
 ```
 
-## Adding Heist Cell Targets
+## Development
+
+### Adding Heist Cell Targets
 Either overwrite cells/default.txt or make a new .txt file that sits next to it.
 Lines starting with `#` are comments.
 The line is the name of the cell. This can be followed with `!` and then a weight for the cell. The higher the weight, the more often it will be chosen as the target.
+
+### Adding MacGuffins
+Add entries to `macguffins.txt`. The first token is the category, which must correspond to matching entries in `l10n/ErnRadiantTheft/en.yaml`. The second token is the type of the item, as defined in the OpenMW Lua API Types package. The third token is the item record id.
+
+### Quest Bonus
+The quest bonus is 100 + `ernradianttheft_questbonus`, which is a global variable that has a default value of 1.

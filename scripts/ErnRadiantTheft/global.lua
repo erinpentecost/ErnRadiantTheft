@@ -265,8 +265,10 @@ local function newJob(player)
     -- determine parent cell.
     local parentCell = nil
     local setup = nil
+    local distance = 1
     for _, cell in ipairs(common.shuffle(cells.allowedCells)) do
-        if getDistance(myCell, cell) > settings.maxDistance() then
+        distance = getDistance(myCell, cell)
+        if distance > settings.maxDistance() then
             settings.debugPrint("Skipping distant cell " .. cell.id)
         else
             -- this is a potentially valid cell.
@@ -304,7 +306,8 @@ local function newJob(player)
         category = macguffin.category,
         type = macguffin.type,
         recordId = macguffin.record.id,
-        itemInstance = macguffinInstance
+        itemInstance = macguffinInstance,
+        distance = math.ceil(distance),
     }
 
     -- place the macguffin
@@ -315,6 +318,11 @@ local function newJob(player)
     savePlayerState(player, state)
 
     note.giveNote(player, #state.jobs, job.category, macguffin.record, mark, parentCell)
+end
+
+local function setBonus(player, amount)
+    settings.debugPrint("setBonus: " .. amount)
+    world.mwscript.getGlobalVariables(player)["ernradianttheft_questbonus"] = math.ceil(amount)
 end
 
 local function onStolenCallback(stolenItemsData)
@@ -347,14 +355,27 @@ local function onStolenCallback(stolenItemsData)
             settings.debugPrint("quest state is bad for job " .. currentJob.jobID .. ": " .. tostring(quest.stage))
             return
         end
+
+        local playerRank = types.NPC.getFactionRank(data.player, "Thieves Guild")
+        if (currentJob.distance == nil or currentJob.distance < 1) then
+            currentJob.distance = 1
+        end
+        settings.debugPrint("dist: " .. currentJob.distance .. ", rank: " .. playerRank)
+
         -- we stole the right item.
         if data.caught then
             settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_bad state")
             types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_BAD, data.player)
+
+            setBonus(data.player, 200 + (100 * math.log(currentJob.distance)) + (6 * playerRank * playerRank))
         else
             settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_good state")
             types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_GOOD, data.player)
+
+            setBonus(data.player, 150 + (75 * math.log(currentJob.distance)) + (5 * playerRank * playerRank))
         end
+
+        -- setBonus(player, amount)
     end
 end
 
