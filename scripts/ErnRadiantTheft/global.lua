@@ -216,13 +216,23 @@ local function setupMacguffinInCells(parentCell, forbiddenCategory)
     -- randomly select from list.
     -- this lets us get into cantons and under-skarr.
 
+    local seenCellsSet = {}
+    seenCellsSet[parentCell.name] = true
+
     local someCells = {}
     table.insert(someCells, parentCell)
     for _, door in ipairs(getDoors(parentCell)) do
         local childCell = types.Door.destCell(door)
-        table.insert(someCells, childCell)
+        if seenCellsSet[childCell.name] ~= true then
+            table.insert(someCells, childCell)
+            seenCellsSet[childCell.name] = true
+        end
         for _, otherDoor in ipairs(getDoors(childCell)) do
-            table.insert(someCells, types.Door.destCell(otherDoor))
+            local targetCell = types.Door.destCell(otherDoor)
+            if seenCellsSet[targetCell.name] ~= true then
+                table.insert(someCells, targetCell)
+                seenCellsSet[targetCell.name] = true
+            end
         end
     end
 
