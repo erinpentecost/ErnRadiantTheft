@@ -17,6 +17,7 @@ necromancy, Book, bk_corpsepreperation1_c
 necromancy, Book, bk_corpsepreperation2_c
 necromancy, Book, bk_corpsepreperation3_c
 necromancy, Book, T_Bk_OnNecromanyPC
+necromancy, Book, T_Bk_MysteriesOfTheWormTR
 ayleid, Clothing, T_Ayl_Amulet_01
 ayleid, Clothing, T_Ayl_Ring_01
 ayleid, Clothing, T_Ayl_Ring_02

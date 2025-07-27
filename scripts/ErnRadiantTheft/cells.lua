@@ -38,7 +38,7 @@ local function loadAllowedCellsFromFile(path)
     local nameToWeight = {}
     local allowedNames = {}
     for line in handle:lines() do
-        local stripped = string.gsub(line, "%s", "")
+        local stripped = line
         if #stripped > 0 and (string.sub(stripped, 1, 1) ~= "#") then
             -- this isn't a comment line
             -- the are two fields: <cell name>!<weight>
@@ -46,12 +46,13 @@ local function loadAllowedCellsFromFile(path)
             for token in string.gmatch(stripped, "[^!]+") do
                 table.insert(split, token)
             end
-            allowedNames[split[0]] = true
+            allowedNames[split[1]] = true
             if #split > 1 then
-                nameToWeight[split[0]] = tonumber(split[1])
+                nameToWeight[split[1]] = tonumber(split[2])
             else
-                nameToWeight[split[0]] = 1
+                nameToWeight[split[1]] = 1
             end
+            settings.debugPrint("Read " .. split[1] .. " x" .. nameToWeight[split[1]])
         end
     end
     -- add cells in our allowlist
@@ -61,6 +62,7 @@ local function loadAllowedCellsFromFile(path)
             for i = 1, nameToWeight[cell.name] do
                 table.insert(allowedCells, cell)
             end
+            settings.debugPrint("Found " .. cell.name)
         end
     end
     settings.debugPrint("Loaded " .. tostring(#allowedCells) .. " exterior cells into the allowlist from '" .. path ..

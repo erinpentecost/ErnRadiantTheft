@@ -56,7 +56,7 @@ heist_skooma_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Skooma<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
-  We believe {npc} in {location} has a stash of Skooma. Bring back a {item}.
+  We believe {npc} in {location} has a stash of Skooma. Bring back their {item}.
   <BR>
 
 heist_necromancy_name: "Heist #{number}: Necromancy"
