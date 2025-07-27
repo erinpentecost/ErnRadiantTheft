@@ -2,7 +2,7 @@
 
 Unlimited heists from the Thieves Guild.
 
-There are unlimited marks to fleece out there in Tamriel. Talk to any Mastermind in the Thieves Guild after getting to Wet Ear rank, and you'll be able to take on heists. Heists will take you all across Tamriel (compatible with all landmass mods) as you attempt to steal valuable artifacts, incriminating letters, skooma, and more. Get the goods without being detected to get a hefty payout when you return to any Mastermind with your loot.
+There are unlimited marks to fleece out there in Tamriel. Talk to any Mastermind in the Thieves Guild after getting to Wet Ear rank, and you'll be able to take on heists. Heists will take you all across Tamriel (compatible with all landmass mods) as you attempt to steal valuable artifacts, incriminating letters, skooma, and more. Get the goods without being detected to get a hefty payout when you return to any Mastermind with your loot. The further away the job, the more you get paid.
 
 ## Installing
 
@@ -28,3 +28,4 @@ Add entries to `macguffins.txt`. The first token is the category, which must cor
 
 ### Quest Bonus
 The quest bonus is 100 + `ernradianttheft_questbonus`, which is a global variable that has a default value of 1.
+You get more gold the higher your rank in the Thieves Guild, the further away the target cell is, and whether or not you were spotted.
