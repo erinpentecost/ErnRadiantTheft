@@ -14,9 +14,11 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
-]] local interfaces = require("openmw.interfaces")
+]]
+local interfaces = require("openmw.interfaces")
 local storage = require("openmw.storage")
 local types = require("openmw.types")
+local async = require('openmw.async')
 
 local MOD_NAME = "ErnRadiantTheft"
 
@@ -28,7 +30,7 @@ end
 
 local function debugPrint(str, ...)
     if debugMode() then
-        local arg = {...}
+        local arg = { ... }
         if arg ~= nil then
             print(string.format("DEBUG: " .. str, unpack(arg)))
         else
@@ -58,7 +60,7 @@ local function initSettings()
         description = "modSettingsGameplayDesc",
         page = MOD_NAME,
         permanentStorage = false,
-        settings = {{
+        settings = { {
             key = "maxDistance",
             name = "maxDistance_name",
             description = "maxDistance_description",
@@ -69,18 +71,33 @@ local function initSettings()
                 min = 3,
                 max = 1000
             }
-        },{
+        }, {
+            key = "resetData",
+            name = "resetData_name",
+            description = "resetData_description",
+            default = false,
+            renderer = "checkbox",
+            trueLabel = "reset",
+            falseLabel = "reset",
+        }, {
             key = "debugMode",
             name = "debugMode_name",
             description = "debugMode_description",
             default = false,
             renderer = "checkbox"
-        }}
+        } }
     }
 
     print("init settings")
 end
 
+local function onReset(fn)
+    SettingsGameplay:subscribe(async:callback(function(section, key)
+        if key == "resetData" then
+            fn()
+        end
+    end))
+end
 
 return {
     initSettings = initSettings,
@@ -89,7 +106,8 @@ return {
     registerPage = registerPage,
 
     maxDistance = maxDistance,
-    
+    onReset = onReset,
+
     debugMode = debugMode,
     debugPrint = debugPrint
 }

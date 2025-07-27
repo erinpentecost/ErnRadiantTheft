@@ -14,7 +14,8 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
-]] local settings = require("scripts.ErnRadiantTheft.settings")
+]]
+local settings = require("scripts.ErnRadiantTheft.settings")
 local common = require("scripts.ErnRadiantTheft.common")
 local infrequent = require("scripts.ErnRadiantTheft.infrequent")
 local cells = require("scripts.ErnRadiantTheft.cells")
@@ -36,21 +37,38 @@ end
 -- Init settings first to init storage which is used everywhere.
 settings.initSettings()
 
-local persistedState = {
-    -- currentJobID is kept to maintain globally unique ids
-    currentJobID = 0,
-    -- players is a map of player-specific state to track.
-    -- the index is the player id.
-    players = {}
-}
+local function defaultState()
+    return {
+        -- currentJobID is kept to maintain globally unique ids
+        currentJobID = 0,
+        -- players is a map of player-specific state to track.
+        -- the index is the player id.
+        players = {}
+    }
+end
+
+local persistedState = defaultState()
 
 local function saveState()
     return persistedState
 end
 
 local function loadState(saved)
-    persistedState = saved
+    if (saved ~= nil) and (saved.players ~= nil) then
+        persistedState = saved
+        print("Loaded save data.")
+    else
+        persistedState = defaultState()
+        print("Failed to load valid save data.")
+    end
 end
+
+local function reset()
+    print("Reset state!")
+    persistedState = defaultState()
+end
+
+settings.onReset(reset)
 
 local function initPlayer(player)
     persistedState.players[player.id] = {
@@ -59,16 +77,22 @@ local function initPlayer(player)
     }
 end
 
-local function getPlayerState(player)
-    local state = persistedState.players[player.id]
-    if state == nil then
-        state = initPlayer(player)
-    end
-    return state
-end
-
 local function savePlayerState(player, state)
     persistedState.players[player.id] = state
+end
+
+local function getPlayerState(player)
+    if (persistedState == nil) or (persistedState.players == nil) then
+        print("Reset state.")
+        persistedState = defaultState()
+    end
+    local state = persistedState.players[player.id]
+    if state == nil then
+        settings.debugPrint("setting up new player state")
+        initPlayer(player)
+        state = persistedState.players[player.id]
+    end
+    return state
 end
 
 local function getExteriorCell(cell)
@@ -85,8 +109,8 @@ local function getExteriorCell(cell)
 end
 
 local function getXY(cell)
-    local _, _, x, y = string.find(cell.id, "Esm3ExteriorCell:([-0-9]+):([-0-9]+)")
-    return util.vector2(tonumber(x), tonumber(y))
+    --local _, _, x, y = string.find(cell.id, "Esm3ExteriorCell:([-0-9]+):([-0-9]+)")
+    return util.vector2(tonumber(cell.gridX), tonumber(cell.gridY))
 end
 
 local function getDistance(cellA, cellB)
@@ -192,17 +216,17 @@ local function setupMacguffinInCells(parentCell, forbiddenCategory)
     -- randomly select from list.
     -- this lets us get into cantons and under-skarr.
 
-    local cells = {}
-    table.insert(cells, parentCell)
+    local someCells = {}
+    table.insert(someCells, parentCell)
     for _, door in ipairs(getDoors(parentCell)) do
         local childCell = types.Door.destCell(door)
-        table.insert(cells, childCell)
-        for _, door in ipairs(getDoors(childCell)) do
-            table.insert(cells, types.Door.destCell(door))
+        table.insert(someCells, childCell)
+        for _, otherDoor in ipairs(getDoors(childCell)) do
+            table.insert(someCells, types.Door.destCell(otherDoor))
         end
     end
 
-    for _, cell in ipairs(common.shuffle(cells)) do
+    for _, cell in ipairs(common.shuffle(someCells)) do
         settings.debugPrint("Building a job in " .. cell.name .. "...")
         local setup = setupMacguffinInCell(cell, forbiddenCategory)
         if setup ~= nil then
@@ -222,6 +246,11 @@ local function newJob(player)
         return
     end
     local state = getPlayerState(player)
+
+    if state == nil then
+        error("state is nil for player")
+        return
+    end
 
     -- make sure we don't get duplicates back-to-back.
     local previousJob = state.jobs[1]
@@ -295,11 +324,15 @@ local function onStolenCallback(stolenItemsData)
         -- called when we steal an item.
         -- used to confirm that we stole the macguffin.
         -- the `caught` field will be used to determine if we get the full reward or not.
-        -- used to confirm that the player didn't cheat by getting the item 
+        -- used to confirm that the player didn't cheat by getting the item
         -- from somewhere else.
         -- settings.debugPrint("stole " .. tostring(data.itemRecord.id) .. " from " .. tostring(data.owner.recordId))
 
         local state = getPlayerState(data.player)
+        if state == nil then
+            error("player state is nil")
+            return
+        end
 
         local currentJob = state.jobs[1]
         -- settings.debugPrint("job: " .. aux_util.deepToString(currentJob, 4))
@@ -344,7 +377,9 @@ local restartCallback = async:registerTimerCallback(settings.MOD_NAME .. "_resta
     quest.finished = false
     quest.stage = common.questStage.AVAILABLE - 1
     quest:addJournalEntry(common.questStage.AVAILABLE, data.player)
-    data.player:sendEvent(settings.MOD_NAME .. 'onQuestAvailable', data)
+    if data.stage == common.questStage.QUIT then
+        data.player:sendEvent(settings.MOD_NAME .. 'onQuestAvailable', data)
+    end
 end)
 
 local function onQuestUpdate(data)
@@ -358,27 +393,36 @@ local function onQuestUpdate(data)
         if quest.stage == common.questStage.COMPLETED then
             -- delete the macguffin!
             local state = getPlayerState(data.player)
+            if state == nil then
+                quest.stage = common.questStage.AVAILABLE
+                error("player state is nil")
+                return
+            end
             local previousJob = state.jobs[1]
             local inst = data.player.type.inventory(data.player):find(previousJob.recordId)
-            settings.debugPrint("removing a "..previousJob.recordId)
+            settings.debugPrint("removing a " .. previousJob.recordId)
             inst:remove(1)
         end
 
         -- RESTARTING exists so we don't double-spawn the restartCallback.
         settings.debugPrint("setting up timer for job restart")
         quest.stage = common.questStage.RESTARTING
-        local waitTime = 60 * 60
         if quest.stage == common.questStage.QUIT then
-            waitTime = waitTime * 24 * 3
+            -- Penalty for quiting is a three day wait.
+            local waitTime = 60 * 60 * 24 * 3
+            async:newGameTimer(waitTime, restartCallback, {
+                player = data.player,
+                stage = quest.stage,
+            })
         else
-            waitTime = waitTime * 3
+            -- Near-instant for success.
+            async:newGameTimer(1, restartCallback, {
+                player = data.player,
+                stage = quest.stage,
+            })
         end
 
         quest.finished = true
-
-        async:newGameTimer(waitTime, restartCallback, {
-            player = data.player
-        })
     end
 end
 
@@ -390,14 +434,18 @@ local function syncPlayer(player)
     end
 
     local state = getPlayerState(player)
-
+    if state == nil then
+        quest.stage = common.questStage.AVAILABLE
+        error("player state is nil")
+        return
+    end
     -- monitor for inventory changes.
     -- use quest stage to bridge into mwscript, since mwscript doesn't
     -- know which item it is looking for.
 
     local currentJob = state.jobs[1]
     settings.debugPrint("checking player status. quest: " .. tostring(quest.stage) .. ". job: " ..
-                            aux_util.deepToString(currentJob, 4))
+        aux_util.deepToString(currentJob, 4))
 
     if currentJob ~= nil then
         local hasMacguffin = containerHasItem(player, state.jobs[1].recordId)
@@ -425,6 +473,39 @@ local function onActivate(object, actor)
         syncPlayer(actor)
     end
 end
+
+local function printPotentialCells()
+    local dupe = {}
+    local byRegion = {}
+    local sortableRegions = {}
+    for _, cell in ipairs(world.cells) do
+        if (cell.name ~= "" and cell.name ~= nil and cell.isExterior or cell:hasTag("QuasiExterior")) then
+            if byRegion[cell.region] == nil then
+                byRegion[cell.region] = {}
+                table.insert(sortableRegions, cell.region)
+            end
+            if dupe[cell.name] ~= true then
+                if #cell:getAll(types.NPC) > 2 then
+                    table.insert(byRegion[cell.region], cell.name)
+                    dupe[cell.name] = true
+                end
+            end
+        end
+    end
+    table.sort(sortableRegions)
+    for _, region in ipairs(sortableRegions) do
+        print("#REGION: " .. region)
+        local cellList = byRegion[region]
+        table.sort(cellList)
+        for _, aCell in ipairs(cellList) do
+            print(aCell)
+        end
+    end
+end
+
+-- used to build up cells/ id files.
+-- uncomment to print all maybe-good target cells to the log.
+--printPotentialCells()
 
 return {
     eventHandlers = {

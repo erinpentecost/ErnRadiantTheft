@@ -1,0 +1,242 @@
+#REGION: aanthirin region
+Aimrah
+Almas Thirr
+Dondril
+Felms Ithul
+Gol Mok
+Hlan Oek
+Idathren
+Indal-ruhn
+Maar-Bani Crossing
+Mundrethi Plantation, Slave Market
+Oran Plantation
+Roa Dyr
+Velonith
+Vhul
+#REGION: abecean sea region
+#REGION: alt orethan region
+Alumawia
+Meralag
+#REGION: armun ashlands region
+Armun Pass Outpost
+Arvud
+Mashadananit
+Ushu-Kur
+Volenfaryon
+#REGION: ascadian isles region
+Arvel Plantation
+Bal Fell
+Dren Plantation
+Ebonheart
+Pelagiad
+Suran
+Vivec
+Vivec, Arena
+Vivec, Foreign Quarter
+Vivec, Hlaalu
+Vivec, Redoran
+Vivec, St. Delyn
+Vivec, St. Olms
+Vivec, Telvanni
+Vivec, Temple
+#REGION: ashlands region
+Ald-ruhn
+Bal Isra
+Buckmoth Legion Fort
+Ghostgate
+Kogoruhn
+Maar Gan
+Valenvaryon
+#REGION: azura's coast region
+Ald Daedroth
+Sadrith Mora
+Tel Aruhn
+Tel Branora
+Tel Mora
+Vos
+Wolverine Hall
+#REGION: bitter coast region
+Gnaar Mok
+Hla Oad
+Khartag Point
+Seyda Neen
+#REGION: boethiah's spine region
+Alt Bosara
+Amthuandz Excavations
+Andar Mok
+Tel Mothrivra
+Windmoth Legion Fort
+#REGION: brodir grove region
+#REGION: clambering moor region
+Firemoth Legion Fort
+Sulfurwatch Keep
+#REGION: dagon urul region
+Firewatch
+Helnim
+Koranyon
+#REGION: dasek marsh region
+#REGION: druadach highlands region
+Bailcnoss
+Criaglorc
+Dragonstar East
+Dragonstar West
+Haimtir
+Mairager
+Merduibh
+Taurus Hall
+#REGION: felsaad coast region
+Skaal Village
+#REGION: gilded hills region
+Beldaburo
+Salthearth
+#REGION: gold coast region
+Anvil, Garden Quarter!5
+Anvil, Little Arenthia!5
+Anvil, Marina!5
+Anvil, Port Quarter!5
+Archad
+Brina Cross!2
+Fort Heath
+Fort Telodrach
+Goldstone
+Hal Sadek
+Marav
+Talgiana Orchard
+Thresvy
+#REGION: grazelands region
+Tel Vos
+#REGION: hirstaang forest region
+Fort Frostmoth
+Raven Rock
+#REGION: isinfier plains region
+Solstheim, Altar of Thrond
+#REGION: lan orethan region
+Bosmora
+Dreynim
+Dreynim Spa
+Nethril Plantation
+Sadavel Plantation
+Thalotheran Quarry
+#REGION: lorchwuir heath region
+Bethorst
+Karthwasten!5
+Vorngyd's Stand
+#REGION: mephalan vales region
+Akamora
+Akamora, Mines
+Tahvel
+#REGION: moesring mountains region
+#REGION: molag mar region
+Marandus
+Molag Mar
+#REGION: molag ruhn region
+Erethan Plantation
+Marog
+Tel Gilan
+Tel Muthada
+#REGION: molagreahd region
+Alendu Plantation
+Bal Oyra
+Llothanis
+Ranyon-ruhn
+Sarvanni
+Tel Ouada
+#REGION: mournhold region
+Mournhold, Godsreach
+Mournhold, Great Bazaar
+Mournhold, Plaza Brindisi Dorom
+Mournhold, Royal Palace: Courtyard
+Mournhold, Temple Courtyard
+#REGION: nedothril region
+Enamor Dayn
+#REGION: old ebonheart region
+Ebon Tower
+Old Ebonheart!5
+Old Ebonheart, Docks!2
+#REGION: othreleth woods region
+#REGION: padomaic ocean region
+Gorne
+Windbreaker Keep
+#REGION: red mountain region
+#REGION: roth roryn region
+Ald Virak
+Anbarsud, Mine
+Bal Foyen
+Bal Foyen, Docks
+Bodrum
+Bodrum, Quarry
+Bthuangthuv
+Fort Ancylis
+Menaan
+Mvelthngth-Schel
+Omaynis
+Savrethi Distillery
+Teyn
+Vathras Plantation
+#REGION: sacred lands region
+Fort Umbermoth
+Necrom
+Necrom, Temple Courtyard
+Necrom, Upper District
+Necrom, Waterfront
+Sailen
+#REGION: sea of ghosts region
+Bahrammu
+Manrizache
+Nivalis
+Tel Rivus
+#REGION: sheogorad
+Dagon Fel
+#REGION: shipal-shin region
+Adavrin Plantation
+Kaushirimilk
+Narsis!3
+Narsis, Council Quarter!5
+Narsis, Foreign Quarter!5
+Narsis, Market Quarter!5
+Narsis, Old Quarter!5
+Narsis, St. Veloth Quarter!5
+Narsis, Waterfront!5
+Old Dren Plantation
+Riverkeep
+Septim's Gate Pass
+Shipal-Sharai
+Stormgate Pass
+Uddanu
+Vedas Plantation
+Yandaran
+#REGION: stirk isle region
+Charach!2
+#REGION: sundered scar region
+Darvonis
+#REGION: telvanni isles region
+Gah Sadrith
+Port Telvannis
+Sadas Plantation
+#REGION: thirr valley region
+Ald Iuval
+Ald Marak
+Hladri Winery
+Hlerynhul
+Mavandes Caravanserai
+Othmura
+Sadrathim
+Vadaryn Plantation
+Vandirelyon
+#REGION: thirsk region
+Thirsk
+#REGION: velothi mountains region
+Uman
+#REGION: vorndgad forest region
+Blood Paw Lodge
+Karthgad
+Vornberg
+#REGION: west gash region
+Ald Velothi
+Andasreth
+Balmora
+Berandas
+Caldera
+Gnisis
+Khuul
+Moonmoth Legion Fort

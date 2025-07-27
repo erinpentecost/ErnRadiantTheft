@@ -15,3 +15,8 @@ data="/wherevermymodsare/mods/ErnRadiantTheft-main"
 content=ErnRadiantTheft.omwaddon
 content=ErnRadiantTheft.omwscripts
 ```
+
+## Adding Heist Cell Targets
+Either overwrite cells/default.txt or make a new .txt file that sits next to it.
+Lines starting with `#` are comments.
+The line is the name of the cell. This can be followed with `!` and then a weight for the cell. The higher the weight, the more often it will be chosen as the target.

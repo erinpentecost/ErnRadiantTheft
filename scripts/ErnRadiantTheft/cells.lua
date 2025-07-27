@@ -35,21 +35,40 @@ local function loadAllowedCellsFromFile(path)
         error(err)
         return
     end
+    local nameToWeight = {}
     local allowedNames = {}
     for line in handle:lines() do
-        allowedNames[string.gsub(line, "%s", "")] = true
+        local stripped = string.gsub(line, "%s", "")
+        if #stripped > 0 and (string.sub(stripped, 1, 1) ~= "#") then
+            -- this isn't a comment line
+            -- the are two fields: <cell name>!<weight>
+            local split = {}
+            for token in string.gmatch(stripped, "[^!]+") do
+                table.insert(split, token)
+            end
+            allowedNames[split[0]] = true
+            if #split > 1 then
+                nameToWeight[split[0]] = tonumber(split[1])
+            else
+                nameToWeight[split[0]] = 1
+            end
+        end
     end
     -- add cells in our allowlist
     for _, cell in ipairs(world.cells) do
         if (cell.name ~= "" and cell.name ~= nil) and (allowedNames[cell.id] or allowedNames[cell.name]) then
-            table.insert(allowedCells, cell)
+            -- add duplicate entries by weight
+            for i = 1, nameToWeight[cell.name] do
+                table.insert(allowedCells, cell)
+            end
         end
     end
-    settings.debugPrint("Loaded "..tostring(#allowedCells).." exterior cells into the allowlist from '"..path.."'.")
+    settings.debugPrint("Loaded " .. tostring(#allowedCells) .. " exterior cells into the allowlist from '" .. path ..
+        "'.")
 end
 
 local function loadAllowedCells()
-    for fileName in vfs.pathsWithPrefix("scripts\\"..settings.MOD_NAME.."\\cells\\") do
+    for fileName in vfs.pathsWithPrefix("scripts\\" .. settings.MOD_NAME .. "\\cells\\") do
         loadAllowedCellsFromFile(fileName)
     end
 end

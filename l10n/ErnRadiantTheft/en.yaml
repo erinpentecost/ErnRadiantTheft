@@ -13,10 +13,14 @@ maxDistance_description: "Maximum distance from current cell to heist cell. Mini
 debugMode_name: "Debug Mode"
 debugMode_description: "Print debug messages."
 
+resetData_name: "Reset Data"
+resetData_description: "Reset mod data."
+reset: "reset"
+
 questAvailable: "A new heist is available."
 
 heist_blackmail_name: "Heist #{number}: Blackmail"
-heist_blackmail_body: | 
+heist_blackmail_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Blackmail<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
@@ -24,7 +28,7 @@ heist_blackmail_body: |
   <BR>
 
 heist_forgery_name: "Heist #{number}: Forgery"
-heist_forgery_body: | 
+heist_forgery_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Forgery<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
@@ -32,7 +36,7 @@ heist_forgery_body: |
   <BR>
 
 heist_trade_secrets_name: "Heist #{number}: Trade Secrets"
-heist_trade_secrets_body: | 
+heist_trade_secrets_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Trade Secrets<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
@@ -40,7 +44,7 @@ heist_trade_secrets_body: |
   <BR>
 
 heist_dwemer_name: "Heist #{number}: Dwemer Contraband"
-heist_dwemer_body: | 
+heist_dwemer_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Dwemer Contraband<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
@@ -48,7 +52,7 @@ heist_dwemer_body: |
   <BR>
 
 heist_skooma_name: "Heist #{number}: Skooma"
-heist_skooma_body: | 
+heist_skooma_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Skooma<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
@@ -56,7 +60,7 @@ heist_skooma_body: |
   <BR>
 
 heist_necromancy_name: "Heist #{number}: Necromancy"
-heist_necromancy_body: | 
+heist_necromancy_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Necromancy<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
@@ -64,9 +68,9 @@ heist_necromancy_body: |
   <BR>
 
 heist_ayleid_name: "Heist #{number}: Ayleid Artifact"
-heist_ayleid_body: | 
+heist_ayleid_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Ayleid Artifact<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
-  We got word that {npc} came into possession of a rare Ayleid artifact. You can find them in {location}. 
+  We got word that {npc} came into possession of a rare Ayleid artifact. You can find them in {location}.
   <BR>
