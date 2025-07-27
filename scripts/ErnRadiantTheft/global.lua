@@ -377,12 +377,12 @@ local function onStolenCallback(stolenItemsData)
             settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_bad state")
             types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_BAD, data.player)
 
-            setBonus(data.player, 200 + (100 * math.log(currentJob.distance)) + (6 * playerRank * playerRank))
+            setBonus(data.player, 150 + (75 * math.log(currentJob.distance)) + (5 * playerRank * playerRank))
         else
             settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_good state")
             types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_GOOD, data.player)
 
-            setBonus(data.player, 150 + (75 * math.log(currentJob.distance)) + (5 * playerRank * playerRank))
+            setBonus(data.player, 200 + (100 * math.log(currentJob.distance)) + (6 * playerRank * playerRank))
         end
 
         -- setBonus(player, amount)
