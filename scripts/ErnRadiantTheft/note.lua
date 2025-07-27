@@ -14,7 +14,8 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
-]] local settings = require("scripts.ErnRadiantTheft.settings")
+]]
+local settings = require("scripts.ErnRadiantTheft.settings")
 local aux_util = require('openmw_aux.util')
 local types = require("openmw.types")
 local common = require("scripts.ErnRadiantTheft.common")
@@ -28,19 +29,25 @@ local function giveNote(player, number, category, itemRecord, npcRecord, cell)
         cellName = cell.region
     end
 
+    local additionalID = npcRecord.class
+    if math.random(2) == 1 then
+        additionalID = npcRecord.race
+    end
+
     local recordFields = {
         enchant = nil,
         enchantCapacity = 0,
         icon = "icons\\m\\tx_parchment_02.dds",
         isScroll = true,
         model = "meshes\\m\\text_parchment_02.nif",
-        name = localization("heist_"..category.."_name", {number=number}),
+        name = localization("heist_" .. category .. "_name", { number = number }),
         skill = nil,
-        text = localization("heist_"..category.."_body", {item=itemRecord.name, npc=npcRecord.name, location=cellName}),
+        text = localization("heist_" .. category .. "_body",
+            { item = itemRecord.name, npc = npcRecord.name, additionalID = additionalID, location = cellName }),
     }
 
     local draftRecord = types.Book.createRecordDraft(recordFields)
-    local record =  world.createRecord(draftRecord)
+    local record = world.createRecord(draftRecord)
     local noteInstance = world.createObject(record.id)
     noteInstance:moveInto(player)
 end
