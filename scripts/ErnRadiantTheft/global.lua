@@ -390,9 +390,8 @@ local function onStolenCallback(stolenItemsData)
             settings.debugPrint("wrong item or bad data: " .. data.itemInstance.id)
         else
             onMacguffinStolen(currentJob, data)
+            return
         end
-
-        return
     end
 end
 
