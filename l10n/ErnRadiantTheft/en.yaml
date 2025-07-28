@@ -19,6 +19,8 @@ reset: "reset"
 
 questAvailable: "A new heist is available."
 
+macguffinStolen: "Heist loot retrieved!"
+
 heist_blackmail_name: "Heist #{number}: Blackmail"
 heist_blackmail_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
