@@ -19,12 +19,14 @@ reset: "reset"
 
 questAvailable: "A new heist is available."
 
+macguffinStolen: "Heist loot retrieved!"
+
 heist_blackmail_name: "Heist #{number}: Blackmail"
 heist_blackmail_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Blackmail<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
-  We've heard rumours that {npc} in {location} is keeping a shameful secret. Look for some hard incriminating evidence so we might blackmail them.
+  We've heard rumours that {npc} in {location} is keeping a shameful secret. Look for some incriminating evidence so we might blackmail them.
   <BR>
 
 heist_forgery_name: "Heist #{number}: Forgery"
@@ -40,7 +42,7 @@ heist_trade_secrets_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Trade Secrets<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
-  {npc}'s got their hands on a {item} that our client is interested in. They were last known to be in {location}.
+  {npc}'s got their hands on a {item} that our client is interested in. The {additionalID} was last known to be in {location}.
   <BR>
 
 heist_dwemer_name: "Heist #{number}: Dwemer Contraband"
@@ -48,7 +50,7 @@ heist_dwemer_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Dwemer Contraband<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
-  A {item} found its way into {npc}'s possesion. Go to {location} and retrieve it for us.
+  A {item} found its way into {npc}'s possesion. Look for the {additionalID} in {location}, and retrieve the goods.
   <BR>
 
 heist_skooma_name: "Heist #{number}: Skooma"
@@ -72,5 +74,5 @@ heist_ayleid_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>
   Heist: Ayleid Artifact<BR><BR>
   <DIV ALIGN="LEFT"><BR><BR>
-  We got word that {npc} came into possession of a rare Ayleid artifact. You can find them in {location}.
+  We got word that {npc}, the {additionalID}, came into possession of a rare Ayleid artifact. You can find them in {location}.
   <BR>

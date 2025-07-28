@@ -335,6 +335,38 @@ local function setBonus(player, amount)
     world.mwscript.getGlobalVariables(player)["ernradianttheft_questbonus"] = math.ceil(amount)
 end
 
+local function onMacguffinStolen(currentJob, data)
+    settings.debugPrint("stole a macguffin")
+    local quest = types.Player.quests(data.player)[common.questID]
+    if quest.stage ~= common.questStage.STARTED then
+        -- this can happen if the player places the quest item in an owned container
+        -- and pulls it back out again. Don't change state in this case.
+        settings.debugPrint("quest state is bad for job " .. currentJob.jobID .. ": " .. tostring(quest.stage))
+        return
+    end
+
+    local playerRank = types.NPC.getFactionRank(data.player, "Thieves Guild")
+    if (currentJob.distance == nil or currentJob.distance < 1) then
+        currentJob.distance = 1
+    end
+    settings.debugPrint("dist: " .. currentJob.distance .. ", rank: " .. playerRank)
+
+    -- we stole the right item.
+    if data.caught then
+        settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_bad state")
+        types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_BAD, data.player)
+
+        setBonus(data.player, 150 + (75 * math.log(currentJob.distance)) + (5 * playerRank * playerRank))
+    else
+        settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_good state")
+        types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_GOOD, data.player)
+
+        setBonus(data.player, 200 + (100 * math.log(currentJob.distance)) + (6 * playerRank * playerRank))
+    end
+
+    data.player:sendEvent(settings.MOD_NAME .. 'onMacguffinStolen', {})
+end
+
 local function onStolenCallback(stolenItemsData)
     settings.debugPrint("onStolenCallback(" .. aux_util.deepToString(stolenItemsData, 4) .. ")")
 
@@ -355,37 +387,11 @@ local function onStolenCallback(stolenItemsData)
         local currentJob = state.jobs[1]
         -- settings.debugPrint("job: " .. aux_util.deepToString(currentJob, 4))
         if (currentJob == nil) or (currentJob.itemInstance.id ~= data.itemInstance.id) then
-            return
-        end
-        settings.debugPrint("stole a macguffin")
-        local quest = types.Player.quests(data.player)[common.questID]
-        if quest.stage ~= common.questStage.STARTED then
-            -- this can happen if the player places the quest item in an owned container
-            -- and pulls it back out again.
-            settings.debugPrint("quest state is bad for job " .. currentJob.jobID .. ": " .. tostring(quest.stage))
-            return
-        end
-
-        local playerRank = types.NPC.getFactionRank(data.player, "Thieves Guild")
-        if (currentJob.distance == nil or currentJob.distance < 1) then
-            currentJob.distance = 1
-        end
-        settings.debugPrint("dist: " .. currentJob.distance .. ", rank: " .. playerRank)
-
-        -- we stole the right item.
-        if data.caught then
-            settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_bad state")
-            types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_BAD, data.player)
-
-            setBonus(data.player, 150 + (75 * math.log(currentJob.distance)) + (5 * playerRank * playerRank))
+            settings.debugPrint("wrong item or bad data: " .. data.itemInstance.id)
         else
-            settings.debugPrint("job " .. currentJob.jobID .. " entered stolen_good state")
-            types.Player.quests(data.player)[common.questID]:addJournalEntry(common.questStage.STOLEN_GOOD, data.player)
-
-            setBonus(data.player, 200 + (100 * math.log(currentJob.distance)) + (6 * playerRank * playerRank))
+            onMacguffinStolen(currentJob, data)
+            return
         end
-
-        -- setBonus(player, amount)
     end
 end
 

@@ -14,7 +14,8 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
-]] local settings = require("scripts.ErnRadiantTheft.settings")
+]]
+local settings = require("scripts.ErnRadiantTheft.settings")
 local common = require("scripts.ErnRadiantTheft.common")
 local core = require("openmw.core")
 local self = require("openmw.self")
@@ -38,6 +39,12 @@ local function onQuestAvailable(data)
     settings.debugPrint("onQuestAvailable")
 
     ui.showMessage(localization("questAvailable", {}))
+end
+
+local function onMacguffinStolen(data)
+    settings.debugPrint("onMacguffinStolen")
+
+    ui.showMessage(localization("macguffinStolen", {}))
 end
 
 return {

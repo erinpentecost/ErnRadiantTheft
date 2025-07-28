@@ -49,7 +49,7 @@ local function getRecord(itemtype, id)
     if itemtype == "Apparatus" then
         return types.Apparatus.records[id]
     end
-    error("unknown type: "..itemtype)
+    error("unknown type: " .. itemtype)
     return nil
 end
 
@@ -58,11 +58,11 @@ local function filter(macguffin, npcRecord)
     -- don't pick macguffins that will be sold by the mark.
     local typeToService = {
         Miscellaneous = "Misc",
-        Armor="Armor",
-        Potion="Potions",
-        Ingredient="Ingredients",
-        Book="Books",
-        Clothing="Clothing"
+        Armor = "Armor",
+        Potion = "Potions",
+        Ingredient = "Ingredients",
+        Book = "Books",
+        Clothing = "Clothing"
     }
     local service = typeToService[macguffin.type]
     if service == nil then
@@ -73,15 +73,41 @@ local function filter(macguffin, npcRecord)
         return false
     end
 
+    -- only use trade_secrets category if they are a merchant
+    if macguffin.category == "trade_secrets" then
+        local isMerchant = (string.lower(npcRecord.class) == "merchant")
+        for k, _ in pairs(npcRecord.servicesOffered) do
+            isMerchant = true
+        end
+        if isMerchant == false then
+            settings.debugPrint("not valid; trade_secrets but not a merchant")
+            return false
+        end
+    end
+
+    -- only use forgery and blackmail categories if they are not poor
+    local poor = {
+        farmer = true,
+        commoner = true,
+        herder = true,
+        hunter = true,
+        miner = true,
+        pauper = true,
+        slave = true,
+    }
+    if poor[string.lower(npcRecord.class)] and (macguffin.category == "blackmail" or macguffin.category == "forgery") then
+        settings.debugPrint("not valid; blackmail or forgery but poor")
+        return false
+    end
+
     -- don't pick respawning npcs.
     if npcRecord.isRespawning then
         --settings.debugPrint("not valid; respawns")
         return false
     end
 
-    -- guards have bad names.
-    if string.lower(npcRecord.class) == "guard" then
-        --settings.debugPrint("not valid; is a guard")
+    -- guards have bad names. also, don't steal from slaves.
+    if (string.lower(npcRecord.class) == "guard") or (string.lower(npcRecord.class) == "slave") then
         return false
     end
 
@@ -108,7 +134,7 @@ local function loadMacguffins()
     -- read allow list.
     local handle = nil
     local err = nil
-    handle, err = vfs.open("scripts\\"..settings.MOD_NAME.."\\macguffins.txt")
+    handle, err = vfs.open("scripts\\" .. settings.MOD_NAME .. "\\macguffins.txt")
     if handle == nil then
         error(err)
         return
@@ -122,16 +148,16 @@ local function loadMacguffins()
         end
 
         if #split ~= 3 then
-            error("line doesn't have 3 fields: "..line)
+            error("line doesn't have 3 fields: " .. line)
         else
             -- this line is ok. strip spaces.
             split[1] = string.gsub(split[1], "%s", "")
             split[2] = string.gsub(split[2], "%s", "")
             split[3] = string.gsub(split[3], "%s", "")
-            
+
             local record = getRecord(split[2], split[3])
             if record == nil then
-                settings.debugPrint("couldn't find record for line: "..line)
+                settings.debugPrint("couldn't find record for line: " .. line)
             else
                 table.insert(macguffins, {
                     category = string.lower(split[1]),
@@ -141,7 +167,7 @@ local function loadMacguffins()
             end
         end
     end
-    settings.debugPrint("Loaded "..tostring(#macguffins).." macguffins into the allowlist.")
+    settings.debugPrint("Loaded " .. tostring(#macguffins) .. " macguffins into the allowlist.")
 end
 
 loadMacguffins()
