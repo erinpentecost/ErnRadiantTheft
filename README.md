@@ -16,6 +16,14 @@ content=ErnRadiantTheft.omwaddon
 content=ErnRadiantTheft.omwscripts
 ```
 
+## Heist Cell Selection
+It works like this:
+
+1. Get a random list of all possible cells.
+2. If the cell was used in the last 10 heists (whether you gave up or not), put it at the end of the list.
+3. If the cell is too far away from your configured `Soft Max Distance`, put it at the end of the list.
+4. Pick the first item in the list.
+
 ## Development
 
 ### Adding Heist Cell Targets
