@@ -119,11 +119,11 @@ local function getDistance(cellA, cellB)
         return 1
     end
     if cellA.worldSpaceId ~= cellB.worldSpaceId then
-        settings.debugPrint("different worldspaces for " .. cellA.name .. " and " .. cellB.name)
+        --settings.debugPrint("different worldspaces for " .. cellA.name .. " and " .. cellB.name)
         return 100000
     end
     local dist = (getXY(cellA) - getXY(cellB)):length()
-    settings.debugPrint("distance from " .. cellA.name .. " to " .. cellB.name .. ": " .. tostring(dist))
+    --settings.debugPrint("distance from " .. cellA.name .. " to " .. cellB.name .. ": " .. tostring(dist))
     return dist
 end
 
@@ -247,6 +247,43 @@ local function setupMacguffinInCells(parentCell, forbiddenCategory)
     return nil
 end
 
+local function sortCells(player, allowedCells, previousJobs)
+    -- get last 10 jobs.
+    -- put these at the end of the list.
+    -- also put far cells at the end of the list.
+    if (previousJobs == nil) or (#previousJobs == 0) then
+        return allowedCells
+    end
+
+    local myCell = getExteriorCell(player.cell)
+    if myCell == nil then
+        error("failed to determine exterior cell for player")
+    end
+
+    local output = {}
+    for _, allowed in ipairs(allowedCells) do
+        local weight = 0
+        for i = 1, math.min(#previousJobs, 10), 1 do
+            local previous = previousJobs[i]
+            if allowed.id == previous.extCellID then
+                -- we did this one already
+                weight = weight + 1
+            end
+        end
+        if weight > 0 then
+            table.insert(output, allowed)
+            settings.debugPrint("Put " .. allowed.name .. " at the end of the list (too recent).")
+        elseif getDistance(myCell, allowed) > settings.maxDistance() then
+            table.insert(output, allowed)
+            settings.debugPrint("Put " .. allowed.name .. " at the end of the list (too far).")
+        else
+            table.insert(output, 1, allowed)
+            settings.debugPrint("Put " .. allowed.name .. " at the start of the list.")
+        end
+    end
+    return output
+end
+
 local function newJob(player)
     if player == nil then
         error("player is nil")
@@ -270,25 +307,18 @@ local function newJob(player)
         forbiddenCategory = previousJob.category
     end
 
-    local myCell = getExteriorCell(player.cell)
-
     -- determine parent cell.
+    local possibleExtCells = sortCells(player, common.shuffle(cells.allowedCells), state.jobs)
     local parentCell = nil
     local setup = nil
     local distance = 1
-    for _, cell in ipairs(common.shuffle(cells.allowedCells)) do
-        distance = getDistance(myCell, cell)
-        if distance > settings.maxDistance() then
-            settings.debugPrint("Skipping distant cell " .. cell.id)
-        else
-            -- this is a potentially valid cell.
-            parentCell = cell
-
-            setup = setupMacguffinInCells(parentCell, forbiddenCategory)
-            if setup ~= nil then
-                -- success
-                break
-            end
+    for _, cell in ipairs(possibleExtCells) do
+        -- this is a potentially valid cell.
+        parentCell = cell
+        setup = setupMacguffinInCells(parentCell, forbiddenCategory)
+        if setup ~= nil then
+            -- success
+            break
         end
     end
     if parentCell == nil then
