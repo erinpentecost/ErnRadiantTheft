@@ -260,6 +260,7 @@ local function sortCells(player, allowedCells, previousJobs)
         error("failed to determine exterior cell for player")
     end
 
+    local cellToWeight = {}
     local output = {}
     for _, allowed in ipairs(allowedCells) do
         local weight = 0
@@ -267,19 +268,19 @@ local function sortCells(player, allowedCells, previousJobs)
             local previous = previousJobs[i]
             if allowed.id == previous.extCellID then
                 -- we did this one already
-                weight = weight + 1
+                weight = weight + 2
             end
         end
-        if weight > 0 then
-            table.insert(output, allowed)
-            settings.debugPrint("Put " .. allowed.name .. " at the end of the list (too recent).")
-        elseif getDistance(myCell, allowed) > settings.maxDistance() then
-            table.insert(output, allowed)
-            settings.debugPrint("Put " .. allowed.name .. " at the end of the list (too far).")
-        else
-            table.insert(output, 1, allowed)
-            settings.debugPrint("Put " .. allowed.name .. " at the start of the list.")
+        local distance = getDistance(myCell, allowed)
+        if distance > settings.maxDistance() then
+            weight = weight + math.ceil((distance - settings.maxDistance()) / 5)
         end
+        cellToWeight[allowed.id] = weight
+        table.insert(output, allowed)
+    end
+    table.sort(output, function(a, b) return cellToWeight[a.id] < cellToWeight[b.id] end)
+    for _, c in ipairs(output) do
+        settings.debugPrint(c.name .. " - " .. cellToWeight[c.id])
     end
     return output
 end
