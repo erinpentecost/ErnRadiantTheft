@@ -21,6 +21,9 @@ questAvailable: "A new heist is available."
 
 macguffinStolen: "Heist loot retrieved!"
 
+# This is a list of comma-seperated substrings of containers that should be deprioritized for selection.
+badContainerNames: "Sack,Urn,Basket"
+
 heist_blackmail_name: "Heist #{number}: Blackmail"
 heist_blackmail_body: |
   <DIV ALIGN="CENTER"><FONT COLOR="000000" SIZE="3" FACE="Magic Cards"><BR>

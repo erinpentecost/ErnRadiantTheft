@@ -21,11 +21,12 @@ local infrequent = require("scripts.ErnRadiantTheft.infrequent")
 local cells = require("scripts.ErnRadiantTheft.cells")
 local note = require("scripts.ErnRadiantTheft.note")
 local macguffins = require("scripts.ErnRadiantTheft.macguffins")
+local core = require("openmw.core")
+local localization = core.l10n(settings.MOD_NAME)
 local interfaces = require('openmw.interfaces')
 local async = require('openmw.async')
 local world = require('openmw.world')
 local types = require("openmw.types")
-local core = require("openmw.core")
 local util = require('openmw.util')
 local aux_util = require('openmw_aux.util')
 local storage = require('openmw.storage')
@@ -66,6 +67,10 @@ end
 local function reset()
     print("Reset state!")
     persistedState = defaultState()
+    for _, player in ipairs(world.players) do
+        local quest = types.Player.quests(player)[common.questID]
+        quest.stage = common.questStage.AVAILABLE
+    end
 end
 
 settings.onReset(reset)
@@ -162,6 +167,45 @@ local function containerHasItem(container, itemRecordId)
     return container.type.inventory(container):find(itemRecordId) ~= nil
 end
 
+local function hasAnySubstring(input, substrings)
+    for _, token in ipairs(substrings) do
+        if string.find(input, token) then
+            return true
+        end
+    end
+    return false
+end
+
+local function sortContainers(containers)
+    local badContainerNames = {}
+    local split = {}
+    for token in string.gmatch(localization("badContainerNames"), "[^,]+") do
+        table.insert(badContainerNames, string.lower(token))
+    end
+
+    local containerToWeight = {}
+    local output = {}
+    for _, cont in ipairs(containers) do
+        local containerRecord = types.Container.record(cont)
+        local weight = 0
+        if hasAnySubstring(string.lower(containerRecord.name), badContainerNames) then
+            weight = weight + 10
+        elseif hasAnySubstring(string.lower(containerRecord.id), badContainerNames) then
+            weight = weight + 10
+        end
+        if types.Lockable.isLocked(cont) ~= true then
+            weight = weight + 2
+        end
+        containerToWeight[cont.id] = math.random(0, weight)
+        table.insert(output, cont)
+    end
+    table.sort(output, function(a, b) return containerToWeight[a.id] < containerToWeight[b.id] end)
+    for _, c in ipairs(output) do
+        settings.debugPrint(c.recordId .. " - " .. containerToWeight[c.id])
+    end
+    return output
+end
+
 local function setupMacguffinInCell(cell, forbiddenCategory)
     if cell == nil then
         error("failed to find cell")
@@ -175,11 +219,11 @@ local function setupMacguffinInCell(cell, forbiddenCategory)
     local targetContainer = nil
     local macguffin = nil
     local mark = nil
-    for _, container in ipairs(common.shuffle(cell:getAll(types.Container))) do
+    for _, container in ipairs(sortContainers(common.shuffle(cell:getAll(types.Container)))) do
         if (container.owner ~= nil) and (container.owner.recordId ~= nil) then
             local containerRecord = types.Container.record(container)
             if (containerRecord.isOrganic == false) and (containerRecord.isRespawning == false) and
-                (bannedNPCs[container.owner.recordId] ~= true) then
+                (bannedNPCs[container.owner.recordId] ~= true) and (containerRecord.mwscript == nil) then
                 settings.debugPrint("Finding a macguffin for " .. container.owner.recordId .. "...")
                 -- a stable container with an owner.
                 macguffin = randomMacguffinForNPC(container.owner.recordId, forbiddenCategory)
@@ -268,12 +312,12 @@ local function sortCells(player, allowedCells, previousJobs)
             local previous = previousJobs[i]
             if allowed.id == previous.extCellID then
                 -- we did this one already
-                weight = weight + 2
+                weight = weight + 10
             end
         end
         local distance = getDistance(myCell, allowed)
         if distance > settings.maxDistance() then
-            weight = weight + math.ceil((distance - settings.maxDistance()) / 5)
+            weight = weight + 1 + math.random(0, math.ceil(distance - settings.maxDistance()))
         end
         cellToWeight[allowed.id] = weight
         table.insert(output, allowed)
