@@ -202,7 +202,6 @@ Riverkeep
 Septim's Gate Pass
 Shipal-Sharai
 Stormgate Pass
-Uddanu
 Vedas Plantation
 Yandaran
 #REGION: stirk isle region
