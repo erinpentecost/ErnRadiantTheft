@@ -21,8 +21,8 @@ questAvailable: "A new heist is available."
 
 macguffinStolen: "Heist loot retrieved!"
 
-# This is a list of comma-seperated substrings of containers that should be deprioritized for selection.
-badContainerNames: "Sack,Urn,Basket"
+# This is a list of comma-seperated substrings of containers that should be prioritized for selection.
+goodContainerNames: "Chest,Desk,Drawers,Closet,Table"
 
 heist_blackmail_name: "Heist #{number}: Blackmail"
 heist_blackmail_body: |

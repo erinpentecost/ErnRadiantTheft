@@ -21,6 +21,7 @@ local infrequent = require("scripts.ErnRadiantTheft.infrequent")
 local cells = require("scripts.ErnRadiantTheft.cells")
 local note = require("scripts.ErnRadiantTheft.note")
 local macguffins = require("scripts.ErnRadiantTheft.macguffins")
+local containerUtil = require("scripts.ErnRadiantTheft.containerUtil")
 local core = require("openmw.core")
 local localization = core.l10n(settings.MOD_NAME)
 local interfaces = require('openmw.interfaces')
@@ -167,45 +168,6 @@ local function containerHasItem(container, itemRecordId)
     return container.type.inventory(container):find(itemRecordId) ~= nil
 end
 
-local function hasAnySubstring(input, substrings)
-    for _, token in ipairs(substrings) do
-        if string.find(input, token) then
-            return true
-        end
-    end
-    return false
-end
-
-local function sortContainers(containers)
-    local badContainerNames = {}
-    local split = {}
-    for token in string.gmatch(localization("badContainerNames"), "[^,]+") do
-        table.insert(badContainerNames, string.lower(token))
-    end
-
-    local containerToWeight = {}
-    local output = {}
-    for _, cont in ipairs(containers) do
-        local containerRecord = types.Container.record(cont)
-        local weight = 0
-        if hasAnySubstring(string.lower(containerRecord.name), badContainerNames) then
-            weight = weight + 10
-        elseif hasAnySubstring(string.lower(containerRecord.id), badContainerNames) then
-            weight = weight + 10
-        end
-        if types.Lockable.isLocked(cont) ~= true then
-            weight = weight + 2
-        end
-        containerToWeight[cont.id] = math.random(0, weight)
-        table.insert(output, cont)
-    end
-    table.sort(output, function(a, b) return containerToWeight[a.id] < containerToWeight[b.id] end)
-    for _, c in ipairs(output) do
-        settings.debugPrint(c.recordId .. " - " .. containerToWeight[c.id])
-    end
-    return output
-end
-
 local function setupMacguffinInCell(cell, forbiddenCategory)
     if cell == nil then
         error("failed to find cell")
@@ -219,7 +181,7 @@ local function setupMacguffinInCell(cell, forbiddenCategory)
     local targetContainer = nil
     local macguffin = nil
     local mark = nil
-    for _, container in ipairs(sortContainers(common.shuffle(cell:getAll(types.Container)))) do
+    for _, container in ipairs(containerUtil.sortContainers(common.shuffle(cell:getAll(types.Container)))) do
         if (container.owner ~= nil) and (container.owner.recordId ~= nil) then
             local containerRecord = types.Container.record(container)
             if (containerRecord.isOrganic == false) and (containerRecord.isRespawning == false) and
@@ -394,6 +356,13 @@ local function newJob(player)
         itemInstance = macguffinInstance,
         distance = math.ceil(distance),
     }
+
+    -- lock the container?
+    if (types.Lockable.isLocked(targetContainer) == false) and (containerUtil.lockable(targetContainer)) then
+        local playerRank = types.NPC.getFactionRank(player, "Thieves Guild")
+        types.Lockable.lock(targetContainer, playerRank * 10)
+        settings.debugPrint("locked target container")
+    end
 
     -- place the macguffin
     macguffinInstance:moveInto(targetContainer)
